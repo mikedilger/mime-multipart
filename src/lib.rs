@@ -29,7 +29,8 @@ pub use filepart::FilePart;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
-use hyper::header::{ContentType, Headers, ContentDisposition, DispositionParam};
+use hyper::header::{ContentType, Headers, ContentDisposition, DispositionParam,
+                    DispositionType};
 use mime::{Attr, Mime, TopLevel, Value};
 use buf_read_ext::BufReadExt;
 
@@ -137,10 +138,14 @@ fn inner<R: BufRead>(
         let is_file = always_use_files || {
             let cd: Option<&ContentDisposition> = part_headers.get();
             if cd.is_some() {
-                cd.as_ref().unwrap().parameters.iter().any(|x| match x {
-                    &DispositionParam::Filename(_,_,_) => true,
-                    _ => false
-                })
+                if cd.unwrap().disposition == DispositionType::Attachment {
+                    true
+                } else {
+                    cd.unwrap().parameters.iter().any(|x| match x {
+                        &DispositionParam::Filename(_,_,_) => true,
+                        _ => false
+                    })
+                }
             } else {
                 false
             }
