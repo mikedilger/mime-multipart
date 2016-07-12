@@ -115,12 +115,57 @@ pub enum Node {
     Multipart((Headers, Vec<Node>)),
 }
 
-/// Parse a MIME multipart/* into a `Vec` of `Node`s.  You must pass in a `Read`able
-/// stream for reading the body, as well as the `Headers` separately.  If `always_use_files`
-/// is true, all parts will be streamed to files.  If false, only parts with a `Filename`
-/// `ContentDisposition` header will be streamed to files.  Recursive `multipart/*` parts
-/// will are parsed as well and returned within a `Node::Multipart` variant.
+/// Parse a MIME `multipart/*` from a `Read`able stream into a `Vec` of `Node`s, streaming
+/// files to disk and keeping the rest in memory.  Recursive `multipart/*` parts will are
+/// parsed as well and returned within a `Node::Multipart` variant.
+///
+/// If `always_use_files` is true, all parts will be streamed to files.  If false, only parts
+/// with a `ContentDisposition` header set to `Attachment` or otherwise containing a `Filename`
+/// parameter will be streamed to files.
+///
+/// It is presumed that the headers are still in the stream.  If you have them separately,
+/// use `parse_multipart_body()` instead.
 pub fn parse_multipart<S: Read>(
+    stream: &mut S,
+    always_use_files: bool)
+    -> Result<Vec<Node>, Error>
+{
+    let mut reader = BufReader::with_capacity(4096, stream);
+    let mut nodes: Vec<Node> = Vec::new();
+
+    let mut buf: Vec<u8> = Vec::new();
+
+    let (_, found) = try!(reader.stream_until_token(b"\r\n\r\n", &mut buf));
+    if ! found { return Err(Error::Eof); }
+
+    // Keep the CRLFCRLF as httparse will expect it
+    buf.extend(b"\r\n\r\n".iter().cloned());
+
+    // Parse the headers
+    let mut header_memory = [httparse::EMPTY_HEADER; 16];
+    let headers = try!(match httparse::parse_headers(&buf, &mut header_memory) {
+        Ok(httparse::Status::Complete((_, raw_headers))) => {
+            Headers::from_raw(raw_headers).map_err(|e| From::from(e))
+        },
+        Ok(httparse::Status::Partial) => Err(Error::PartialHeaders),
+        Err(err) => Err(From::from(err)),
+    });
+
+    try!(inner(&mut reader, &headers, &mut nodes, always_use_files));
+    Ok(nodes)
+}
+
+/// Parse a MIME `multipart/*` from a `Read`able stream into a `Vec` of `Node`s, streaming
+/// files to disk and keeping the rest in memory.  Recursive `multipart/*` parts will are
+/// parsed as well and returned within a `Node::Multipart` variant.
+///
+/// If `always_use_files` is true, all parts will be streamed to files.  If false, only parts
+/// with a `ContentDisposition` header set to `Attachment` or otherwise containing a `Filename`
+/// parameter will be streamed to files.
+///
+/// It is presumed that you have the `Headers` already and the stream starts at the body.
+/// If the headers are still in the stream, use `parse_multipart()` instead.
+pub fn parse_multipart_body<S: Read>(
     stream: &mut S,
     headers: &Headers,
     always_use_files: bool)

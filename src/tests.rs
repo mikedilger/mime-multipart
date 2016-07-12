@@ -50,7 +50,7 @@ fn parser() {
     let req = HyperRequest::new(&mut stream, sock).unwrap();
     let (_, _, headers, _, _, mut reader) = req.deconstruct();
 
-    match parse_multipart(&mut reader, &headers, false) {
+    match parse_multipart_body(&mut reader, &headers, false) {
         Ok(nodes) => {
 
             assert_eq!(nodes.len(), 3);
@@ -67,6 +67,9 @@ fn parser() {
                 assert_eq!(filepart.size, 30);
                 assert_eq!(filepart.filename().unwrap().unwrap(), "image.gif");
                 assert_eq!(filepart.content_type().unwrap(), mime!(Image/Gif));
+
+                assert!(filepart.path.exists());
+                assert!(filepart.path.is_file());
             } else {
                 panic!("2nd node of wrong type");
             }
@@ -120,7 +123,7 @@ fn mixed_parser() {
     let req = HyperRequest::new(&mut stream, sock).unwrap();
     let (_, _, headers, _, _, mut reader) = req.deconstruct();
 
-    match parse_multipart(&mut reader, &headers, false) {
+    match parse_multipart_body(&mut reader, &headers, false) {
         Ok(nodes) => {
 
             assert_eq!(nodes.len(), 2);
