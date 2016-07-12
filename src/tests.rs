@@ -64,18 +64,15 @@ fn parser() {
             }
 
             if let Node::File(ref filepart) = nodes[1] {
-                assert_eq!(filepart.size, 30);
+                assert_eq!(filepart.size, Some(30));
                 assert_eq!(filepart.filename().unwrap().unwrap(), "image.gif");
                 assert_eq!(filepart.content_type().unwrap(), mime!(Image/Gif));
-
-                assert!(filepart.path.exists());
-                assert!(filepart.path.is_file());
             } else {
                 panic!("2nd node of wrong type");
             }
 
             if let Node::File(ref filepart) = nodes[2] {
-                assert_eq!(filepart.size, 14);
+                assert_eq!(filepart.size, Some(14));
                 assert_eq!(filepart.filename().unwrap().unwrap(), "file.txt");
                 assert!(filepart.content_type().is_none());
             } else {
@@ -145,7 +142,7 @@ fn mixed_parser() {
                 assert_eq!(subnodes.len(), 2);
 
                 if let Node::File(ref filepart) = subnodes[0] {
-                    assert_eq!(filepart.size, 29);
+                    assert_eq!(filepart.size, Some(29));
                     assert_eq!(filepart.filename().unwrap().unwrap(), "file1.txt");
                     assert!(filepart.content_type().is_none());
                 } else {
@@ -153,7 +150,7 @@ fn mixed_parser() {
                 }
 
                 if let Node::File(ref filepart) = subnodes[1] {
-                    assert_eq!(filepart.size, 37);
+                    assert_eq!(filepart.size, Some(37));
                     assert_eq!(filepart.filename().unwrap().unwrap(), "awesome_image.gif");
                     assert_eq!(filepart.content_type().unwrap(), mime!(Image/Gif));
                 } else {

@@ -27,7 +27,7 @@ pub use error::Error;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::borrow::Cow;
 use std::ops::Drop;
 use encoding::{all, Encoding, DecoderTrap};
@@ -52,30 +52,42 @@ impl Part {
     }
 }
 
-/// An uploaded file that was received as part of `multipart/*` parsing.
-/// Files are streamed to disk to conserve memory (files are potentially very
-/// large)
+/// A file that is to be inserted into a `multipart/*` or alternatively an uploaded file that
+/// was received as part of `multipart/*` parsing.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FilePart {
-    /// The complete headers that were sent along with the file body.
+    /// The headers of the part
     pub headers: Headers,
-    /// The temporary file where the file body was saved.
+    /// A temporary file containing the file content
     pub path: PathBuf,
-    /// The size of the file.
-    pub size: usize,
+    /// Optionally, the size of the file.  This is filled when multiparts are parsed, but is
+    /// not necessary when they are generated.
+    pub size: Option<usize>,
     // The temporary directory the upload was put into, saved for the Drop trait
-    tempdir: PathBuf,
+    tempdir: Option<PathBuf>,
 }
 impl FilePart {
-    pub fn new(headers: Headers) -> Result<FilePart, Error> {
+    pub fn new(headers: Headers, path: &Path) -> FilePart
+    {
+        FilePart {
+            headers: headers,
+            path: path.to_owned(),
+            size: None,
+            tempdir: None,
+        }
+    }
+
+    /// Create a new temporary FilePart (when created this way, the file will be
+    /// deleted once the FilePart object goes out of scope).
+    pub fn create(headers: Headers) -> Result<FilePart, Error> {
         // Setup a file to capture the contents.
-        let tempdir = try!(TempDir::new("mime_multipart")).into_path();
-        let mut path = tempdir.clone();
+        let mut path = try!(TempDir::new("mime_multipart")).into_path();
+        let tempdir = Some(path.clone());
         path.push(TextNonce::sized_urlsafe(32).unwrap().into_string());
         Ok(FilePart {
-            path: path,
-            size: 0,
             headers: headers,
+            path: path,
+            size: None,
             tempdir: tempdir,
         })
     }
@@ -98,8 +110,10 @@ impl FilePart {
 }
 impl Drop for FilePart {
     fn drop(&mut self) {
-        let _ = ::std::fs::remove_file(&self.path);
-        let _ = ::std::fs::remove_dir(&self.tempdir);
+        if self.tempdir.is_some() {
+            let _ = ::std::fs::remove_file(&self.path);
+            let _ = ::std::fs::remove_dir(&self.tempdir.as_ref().unwrap());
+        }
     }
 }
 
@@ -259,13 +273,13 @@ fn inner<R: BufRead>(
         };
         if is_file {
             // Setup a file to capture the contents.
-            let mut filepart = try!(FilePart::new(part_headers));
+            let mut filepart = try!(FilePart::create(part_headers));
             let mut file = try!(File::create(filepart.path.clone()));
 
             // Stream out the file.
             let (read, found) = try!(reader.stream_until_token(&crlf_boundary, &mut file));
             if ! found { return Err(Error::Eof); }
-            filepart.size = read;
+            filepart.size = Some(read);
 
             // TODO: Handle Content-Transfer-Encoding.  RFC 7578 section 4.7 deprecated
             // this, and the authors state "Currently, no deployed implementations that
