@@ -67,6 +67,9 @@ fn parser() {
                 assert_eq!(filepart.size, Some(30));
                 assert_eq!(filepart.filename().unwrap().unwrap(), "image.gif");
                 assert_eq!(filepart.content_type().unwrap(), mime!(Image/Gif));
+
+                assert!(filepart.path.exists());
+                assert!(filepart.path.is_file());
             } else {
                 panic!("2nd node of wrong type");
             }
@@ -75,6 +78,9 @@ fn parser() {
                 assert_eq!(filepart.size, Some(14));
                 assert_eq!(filepart.filename().unwrap().unwrap(), "file.txt");
                 assert!(filepart.content_type().is_none());
+
+                assert!(filepart.path.exists());
+                assert!(filepart.path.is_file());
             } else {
                 panic!("3rd node of wrong type");
             }
@@ -145,6 +151,9 @@ fn mixed_parser() {
                     assert_eq!(filepart.size, Some(29));
                     assert_eq!(filepart.filename().unwrap().unwrap(), "file1.txt");
                     assert!(filepart.content_type().is_none());
+
+                    assert!(filepart.path.exists());
+                    assert!(filepart.path.is_file());
                 } else {
                     panic!("1st subnode of wrong type");
                 }
@@ -153,6 +162,9 @@ fn mixed_parser() {
                     assert_eq!(filepart.size, Some(37));
                     assert_eq!(filepart.filename().unwrap().unwrap(), "awesome_image.gif");
                     assert_eq!(filepart.content_type().unwrap(), mime!(Image/Gif));
+
+                    assert!(filepart.path.exists());
+                    assert!(filepart.path.is_file());
                 } else {
                     panic!("2st subnode of wrong type");
                 }
