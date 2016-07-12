@@ -1,0 +1,18 @@
+[package]
+name = "mime_multipart"
+version = "0.1.0"
+description = "Parsing of MIME multipart into a vector of parts"
+authors = ["Mike Dilger <mike@optcomp.nz>"]
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["mime", "multipart", "mixed"]
+
+[dependencies]
+hyper = "0.9"
+mime = "0.2"
+httparse = "1.1"
+tempdir = "0.3"
+textnonce = "0.3.4"
+log = "0.3"
+encoding = "0.2"
+buf-read-ext = "0.2"
