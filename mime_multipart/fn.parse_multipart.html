@@ -47,13 +47,12 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-271' class='srclink' href='../src/mime_multipart/src/lib.rs.html#61-71' title='goto source code'>[src]</a></span></h1>
-<pre class='rust fn'>pub fn parse_multipart&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a>&gt;(stream: &amp;mut S, headers: &amp;<a class='struct' href='https://hyperium.github.io/hyper/hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a>, always_use_files: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../mime_multipart/enum.Node.html' title='mime_multipart::Node'>Node</a>&gt;,&nbsp;<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>&gt;</pre><div class='docblock'><p>Parse a MIME multipart/* into a <code>Vec</code> of <code>Node</code>s.  You must pass in the MIME
-boundary string, which can be retrieved by calling get_multipart_boundary()
-on the <code>Headers</code>.  If <code>always_use_files</code> is true, all parts will be streamed
-to files.  If false, only parts with a <code>Filename</code> <code>ContentDisposition</code> header
-will be streamed to files.  Recursive <code>multipart/*</code> parts will are parsed as
-well and returned as <code>Node::Multipart</code> variant.</p>
+               </span><a id='src-230' class='srclink' href='../src/mime_multipart/src/lib.rs.html#123-133' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub fn parse_multipart&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a>&gt;(stream: &amp;mut S, headers: &amp;<a class='struct' href='https://hyperium.github.io/hyper/hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a>, always_use_files: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../mime_multipart/enum.Node.html' title='mime_multipart::Node'>Node</a>&gt;,&nbsp;<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>&gt;</pre><div class='docblock'><p>Parse a MIME multipart/* into a <code>Vec</code> of <code>Node</code>s.  You must pass in a <code>Read</code>able
+stream for reading the body, as well as the <code>Headers</code> separately.  If <code>always_use_files</code>
+is true, all parts will be streamed to files.  If false, only parts with a <code>Filename</code>
+<code>ContentDisposition</code> header will be streamed to files.  Recursive <code>multipart/*</code> parts
+will are parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
 </div></section>
     <section id='search' class="content hidden"></section>
 

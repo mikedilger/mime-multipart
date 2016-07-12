@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["FilePart","An uploaded file that was received as part of `multipart/*` parsing. Files are streamed to disk because they may not fit in memory."]]});

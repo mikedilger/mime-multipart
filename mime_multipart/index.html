@@ -47,9 +47,9 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-207' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-325' title='goto source code'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
-<table><tr><td><code>pub use error::<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>;</code></td></tr><tr><td><code>pub use filepart::<a class='struct' href='../mime_multipart/filepart/struct.FilePart.html' title='mime_multipart::filepart::FilePart'>FilePart</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr><td><code>pub use error::<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
                        <tr class=' module-item'>
                            <td><a class='mod' href='error/index.html'
@@ -57,15 +57,17 @@
                            <td class='docblock short'>
                                 
                            </td>
-                       </tr>
-                       <tr class=' module-item'>
-                           <td><a class='mod' href='filepart/index.html'
-                                  title='mime_multipart::filepart'>filepart</a></td>
-                           <td class='docblock short'>
-                                
-                           </td>
                        </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.FilePart.html'
+                                  title='mime_multipart::FilePart'>FilePart</a></td>
+                           <td class='docblock short'>
+                                <p>An uploaded file that was received as part of <code>multipart/*</code> parsing.
+Files are streamed to disk to conserve memory (files are potentially very
+large)</p>
+                           </td>
+                       </tr>
                        <tr class=' module-item'>
                            <td><a class='struct' href='struct.Part.html'
                                   title='mime_multipart::Part'>Part</a></td>
@@ -94,12 +96,11 @@ container containing nested parts.</p>
                            <td><a class='fn' href='fn.parse_multipart.html'
                                   title='mime_multipart::parse_multipart'>parse_multipart</a></td>
                            <td class='docblock short'>
-                                <p>Parse a MIME multipart/* into a <code>Vec</code> of <code>Node</code>s.  You must pass in the MIME
-boundary string, which can be retrieved by calling get_multipart_boundary()
-on the <code>Headers</code>.  If <code>always_use_files</code> is true, all parts will be streamed
-to files.  If false, only parts with a <code>Filename</code> <code>ContentDisposition</code> header
-will be streamed to files.  Recursive <code>multipart/*</code> parts will are parsed as
-well and returned as <code>Node::Multipart</code> variant.</p>
+                                <p>Parse a MIME multipart/* into a <code>Vec</code> of <code>Node</code>s.  You must pass in a <code>Read</code>able
+stream for reading the body, as well as the <code>Headers</code> separately.  If <code>always_use_files</code>
+is true, all parts will be streamed to files.  If false, only parts with a <code>Filename</code>
+<code>ContentDisposition</code> header will be streamed to files.  Recursive <code>multipart/*</code> parts
+will are parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
                            </td>
                        </tr></table></section>
     <section id='search' class="content hidden"></section>
