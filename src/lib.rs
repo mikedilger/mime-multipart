@@ -52,12 +52,11 @@ pub enum Node {
     Multipart((Headers, Vec<Node>)),
 }
 
-/// Parse a MIME multipart/* into a `Vec` of `Node`s.  You must pass in the MIME
-/// boundary string, which can be retrieved by calling get_multipart_boundary()
-/// on the `Headers`.  If `always_use_files` is true, all parts will be streamed
-/// to files.  If false, only parts with a `Filename` `ContentDisposition` header
-/// will be streamed to files.  Recursive `multipart/*` parts will are parsed as
-/// well and returned as `Node::Multipart` variant.
+/// Parse a MIME multipart/* into a `Vec` of `Node`s.  You must pass in a `Read`able
+/// stream for reading the body, as well as the `Headers` separately.  If `always_use_files`
+/// is true, all parts will be streamed to files.  If false, only parts with a `Filename`
+/// `ContentDisposition` header will be streamed to files.  Recursive `multipart/*` parts
+/// will are parsed as well and returned within a `Node::Multipart` variant.
 pub fn parse_multipart<S: Read>(
     stream: &mut S,
     headers: &Headers,

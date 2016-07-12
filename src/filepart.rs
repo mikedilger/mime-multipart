@@ -17,7 +17,8 @@ use hyper::header::{ContentType, Headers, ContentDisposition,
                     DispositionParam, Charset};
 
 /// An uploaded file that was received as part of `multipart/*` parsing.
-/// Files are streamed to disk because they may not fit in memory.
+/// Files are streamed to disk to conserve memory (files are potentially very
+/// large)
 #[derive(Clone, Debug, PartialEq)]
 pub struct FilePart {
     /// The complete headers that were sent along with the file body.
@@ -54,10 +55,10 @@ impl FilePart {
         }
     }
 
-    /// Mime content-type (defaults to Text/Plain if it was unspecified)
-    pub fn content_type(&self) -> Mime {
+    /// Mime content-type specified in the header
+    pub fn content_type(&self) -> Option<Mime> {
         let ct: Option<&ContentType> = self.headers.get();
-        ct.map_or(mime!(Text/Plain; Charset=Utf8), |ref ct| ct.0.clone())
+        ct.map(|ref ct| ct.0.clone())
     }
 }
 
