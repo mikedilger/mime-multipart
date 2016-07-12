@@ -7,6 +7,16 @@ Rust library for MIME multipart parsing and construction
 
 Documentation is available at https://mikedilger.github.io/mime-multipart
 
+## Limitations
+
+Currently we are not generating 'multipart/*', but this will be quite easy to do
+once someone needs such functionality.  See issue #1.
+
+Currently we require hyper::Headers passed in.  We could easily parse headers and
+body ourselves, not requiring anything but the stream (and still leave the current
+API for hyper users who already have the stream and headers separately).  See
+issue #2.
+
 ## License
 
 Licensed under either of
