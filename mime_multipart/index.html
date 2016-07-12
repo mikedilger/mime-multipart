@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-325' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-384' title='goto source code'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
 <table><tr><td><code>pub use error::<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
@@ -63,9 +63,8 @@
                            <td><a class='struct' href='struct.FilePart.html'
                                   title='mime_multipart::FilePart'>FilePart</a></td>
                            <td class='docblock short'>
-                                <p>An uploaded file that was received as part of <code>multipart/*</code> parsing.
-Files are streamed to disk to conserve memory (files are potentially very
-large)</p>
+                                <p>A file that is to be inserted into a <code>multipart/*</code> or alternatively an uploaded file that
+was received as part of <code>multipart/*</code> parsing.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
@@ -96,11 +95,18 @@ container containing nested parts.</p>
                            <td><a class='fn' href='fn.parse_multipart.html'
                                   title='mime_multipart::parse_multipart'>parse_multipart</a></td>
                            <td class='docblock short'>
-                                <p>Parse a MIME multipart/* into a <code>Vec</code> of <code>Node</code>s.  You must pass in a <code>Read</code>able
-stream for reading the body, as well as the <code>Headers</code> separately.  If <code>always_use_files</code>
-is true, all parts will be streamed to files.  If false, only parts with a <code>Filename</code>
-<code>ContentDisposition</code> header will be streamed to files.  Recursive <code>multipart/*</code> parts
-will are parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
+                                <p>Parse a MIME <code>multipart/*</code> from a <code>Read</code>able stream into a <code>Vec</code> of <code>Node</code>s, streaming
+files to disk and keeping the rest in memory.  Recursive <code>multipart/*</code> parts will are
+parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.parse_multipart_body.html'
+                                  title='mime_multipart::parse_multipart_body'>parse_multipart_body</a></td>
+                           <td class='docblock short'>
+                                <p>Parse a MIME <code>multipart/*</code> from a <code>Read</code>able stream into a <code>Vec</code> of <code>Node</code>s, streaming
+files to disk and keeping the rest in memory.  Recursive <code>multipart/*</code> parts will are
+parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
                            </td>
                        </tr></table></section>
     <section id='search' class="content hidden"></section>
