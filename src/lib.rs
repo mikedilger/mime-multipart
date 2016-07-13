@@ -77,6 +77,12 @@ impl FilePart {
         }
     }
 
+    /// If you do not want the file on disk to be deleted when Self drops, call this
+    /// function.  It will become your responsability to clean up.
+    pub fn do_not_delete_on_drop(&mut self) {
+        self.tempdir = None;
+    }
+
     /// Create a new temporary FilePart (when created this way, the file will be
     /// deleted once the FilePart object goes out of scope).
     pub fn create(headers: Headers) -> Result<FilePart, Error> {
