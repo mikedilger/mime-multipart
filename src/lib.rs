@@ -41,8 +41,8 @@ use buf_read_ext::BufReadExt;
 /// A multipart part which is not a file (stored in memory)
 #[derive(Clone, Debug, PartialEq)]
 pub struct Part {
-    headers: Headers,
-    body: Vec<u8>,
+    pub headers: Headers,
+    pub body: Vec<u8>,
 }
 impl Part {
     /// Mime content-type specified in the header
