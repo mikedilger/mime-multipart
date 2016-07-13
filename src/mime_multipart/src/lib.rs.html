@@ -426,6 +426,12 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 mime-multipart Developers</span>
 <span class='comment'>//</span>
@@ -470,8 +476,8 @@
 <span class='doccomment'>/// A multipart part which is not a file (stored in memory)</span>
 <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Clone</span>, <span class='ident'>Debug</span>, <span class='ident'>PartialEq</span>)]</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Part</span> {
-    <span class='ident'>headers</span>: <span class='ident'>Headers</span>,
-    <span class='ident'>body</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>,
+    <span class='kw'>pub</span> <span class='ident'>headers</span>: <span class='ident'>Headers</span>,
+    <span class='kw'>pub</span> <span class='ident'>body</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>,
 }
 <span class='kw'>impl</span> <span class='ident'>Part</span> {
     <span class='doccomment'>/// Mime content-type specified in the header</span>
@@ -504,6 +510,12 @@
             <span class='ident'>size</span>: <span class='prelude-val'>None</span>,
             <span class='ident'>tempdir</span>: <span class='prelude-val'>None</span>,
         }
+    }
+
+    <span class='doccomment'>/// If you do not want the file on disk to be deleted when Self drops, call this</span>
+    <span class='doccomment'>/// function.  It will become your responsability to clean up.</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>do_not_delete_on_drop</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='self'>self</span>.<span class='ident'>tempdir</span> <span class='op'>=</span> <span class='prelude-val'>None</span>;
     }
 
     <span class='doccomment'>/// Create a new temporary FilePart (when created this way, the file will be</span>
