@@ -7,6 +7,10 @@ Rust library for MIME multipart parsing and construction
 
 Documentation is available at https://mikedilger.github.io/mime-multipart
 
+If you are specifically dealing with `multipart/formdata`, you may be interested in
+https://github.com/mikedilger/formdata which uses this crate and takes it a step
+further.
+
 ## Limitations
 
 Currently we are not generating 'multipart/*', but this will be quite easy to do
