@@ -14,7 +14,6 @@ use std::string::FromUtf8Error;
 use super::{httparse, hyper};
 
 /// An error type for the `mime-multipart` crate.
-#[derive(Debug)]
 pub enum Error {
     /// The Hyper request did not have a Content-Type header.
     NoRequestContentType,
@@ -81,6 +80,16 @@ impl Display for Error {
                 format!("{}: {}", self.description(), e).fmt(f),
             _ => format!("{}", self.description()).fmt(f),
         }
+    }
+}
+
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!( f.write_str(&*self.description()) );
+        if self.cause().is_some() {
+            try!( write!(f, ": {:?}", self.cause().unwrap()) ); // recurse
+        }
+        Ok(())
     }
 }
 
