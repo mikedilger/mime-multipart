@@ -24,8 +24,12 @@ pub enum Error {
     BoundaryNotSpecified,
     /// A multipart section contained only partial headers.
     PartialHeaders,
-    /// The request body ended prior to reaching the expected terminating boundary.
-    Eof,
+    EofInMainHeaders,
+    EofBeforeFirstBoundary,
+    NoCrLfAfterBoundary,
+    EofInPartHeaders,
+    EofInFile,
+    EofInPart,
     /// An HTTP parsing error from a multipart section.
     Httparse(httparse::Error),
     /// An I/O error.
@@ -88,9 +92,20 @@ impl StdError for Error {
                 "The Hyper request Content-Type top-level Mime was not multipart.",
             Error::BoundaryNotSpecified =>
                 "The Content-Type header failed to specify a boundary token.",
-            Error::PartialHeaders => "A multipart section contained only partial headers.",
-            Error::Eof =>
-                "The request body ended prior to reaching the expected terminating boundary.",
+            Error::PartialHeaders =>
+                "A multipart section contained only partial headers.",
+            Error::EofInMainHeaders =>
+                "The request headers ended pre-maturely.",
+            Error::EofBeforeFirstBoundary =>
+                "The request body ended prior to reaching the expected starting boundary.",
+            Error::NoCrLfAfterBoundary =>
+                "Missing CRLF after boundary.",
+            Error::EofInPartHeaders =>
+                "The request body ended prematurely while parsing headers of a multipart part.",
+            Error::EofInFile =>
+                "The request body ended prematurely while streaming a file part.",
+            Error::EofInPart =>
+                "The request body ended prematurely while reading a multipart part.",
             Error::Httparse(_) =>
                 "A parse error occurred while parsing the headers of a multipart section.",
             Error::Io(_) => "An I/O error occurred.",

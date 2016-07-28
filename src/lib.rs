@@ -156,7 +156,7 @@ pub fn parse_multipart<S: Read>(
     let mut buf: Vec<u8> = Vec::new();
 
     let (_, found) = try!(reader.stream_until_token(b"\r\n\r\n", &mut buf));
-    if ! found { return Err(Error::Eof); }
+    if ! found { return Err(Error::EofInMainHeaders); }
 
     // Keep the CRLFCRLF as httparse will expect it
     buf.extend(b"\r\n\r\n".iter().cloned());
@@ -211,7 +211,7 @@ fn inner<R: BufRead>(
 
     // Read past the initial boundary
     let (_, found) = try!(reader.stream_until_token(&boundary, &mut buf));
-    if ! found { return Err(Error::Eof); }
+    if ! found { return Err(Error::EofBeforeFirstBoundary); }
 
     loop {
         // If the next two lookahead characters are '--', parsing is finished.
@@ -224,12 +224,12 @@ fn inner<R: BufRead>(
 
         // Read the CRLF after the boundary
         let (_, found) = try!(reader.stream_until_token(b"\r\n", &mut buf));
-        if ! found { return Err(Error::Eof); }
+        if ! found { return Err(Error::NoCrLfAfterBoundary); }
 
         // Read the headers (which end in CRLFCRLF)
         buf.truncate(0); // start fresh
         let (_, found) = try!(reader.stream_until_token(b"\r\n\r\n", &mut buf));
-        if ! found { return Err(Error::Eof); }
+        if ! found { return Err(Error::EofInPartHeaders); }
 
         // Keep the CRLFCRLF as httparse will expect it
         buf.extend(b"\r\n\r\n".iter().cloned());
@@ -284,7 +284,7 @@ fn inner<R: BufRead>(
 
             // Stream out the file.
             let (read, found) = try!(reader.stream_until_token(&crlf_boundary, &mut file));
-            if ! found { return Err(Error::Eof); }
+            if ! found { return Err(Error::EofInFile); }
             filepart.size = Some(read);
 
             // TODO: Handle Content-Transfer-Encoding.  RFC 7578 section 4.7 deprecated
@@ -295,7 +295,7 @@ fn inner<R: BufRead>(
         } else {
             buf.truncate(0); // start fresh
             let (_, found) = try!(reader.stream_until_token(&crlf_boundary, &mut buf));
-            if ! found { return Err(Error::Eof); }
+            if ! found { return Err(Error::EofInPart); }
 
             nodes.push(Node::Part(Part {
                 headers: part_headers,
