@@ -207,11 +207,32 @@ fn inner<R: BufRead>(
     let mut buf: Vec<u8> = Vec::new();
 
     let boundary = try!(get_multipart_boundary(headers));
-    let crlf_boundary = prepend_crlf(&boundary);
 
     // Read past the initial boundary
     let (_, found) = try!(reader.stream_until_token(&boundary, &mut buf));
     if ! found { return Err(Error::EofBeforeFirstBoundary); }
+
+    // Define the bounary, including the line terminator preceding it.
+    // Use their first line terminator to determine whether to use CRLF or LF.
+    let (lt, ltlt, lt_boundary) = {
+        let peeker = try!(reader.fill_buf());
+        if peeker.len() > 1 && &peeker[..2]==b"\r\n" {
+            let mut output = Vec::with_capacity(2 + boundary.len());
+            output.push(b'\r');
+            output.push(b'\n');
+            output.extend(boundary.clone());
+            (vec![b'\r', b'\n'], vec![b'\r', b'\n', b'\r', b'\n'], output)
+        }
+        else if peeker.len() > 0 && peeker[0]==b'\n' {
+            let mut output = Vec::with_capacity(1 + boundary.len());
+            output.push(b'\n');
+            output.extend(boundary.clone());
+            (vec![b'\n'], vec![b'\n', b'\n'], output)
+        }
+        else {
+            return Err(Error::NoCrLfAfterBoundary);
+        }
+    };
 
     loop {
         // If the next two lookahead characters are '--', parsing is finished.
@@ -222,17 +243,17 @@ fn inner<R: BufRead>(
             }
         }
 
-        // Read the CRLF after the boundary
-        let (_, found) = try!(reader.stream_until_token(b"\r\n", &mut buf));
+        // Read the line terminator after the boundary
+        let (_, found) = try!(reader.stream_until_token(&lt, &mut buf));
         if ! found { return Err(Error::NoCrLfAfterBoundary); }
 
-        // Read the headers (which end in CRLFCRLF)
+        // Read the headers (which end in 2 line terminators)
         buf.truncate(0); // start fresh
-        let (_, found) = try!(reader.stream_until_token(b"\r\n\r\n", &mut buf));
+        let (_, found) = try!(reader.stream_until_token(&ltlt, &mut buf));
         if ! found { return Err(Error::EofInPartHeaders); }
 
-        // Keep the CRLFCRLF as httparse will expect it
-        buf.extend(b"\r\n\r\n".iter().cloned());
+        // Keep the 2 line terminators as httparse will expect it
+        buf.extend(ltlt.iter().cloned());
 
         // Parse the headers
         let mut header_memory = [httparse::EMPTY_HEADER; 4];
@@ -283,7 +304,7 @@ fn inner<R: BufRead>(
             let mut file = try!(File::create(filepart.path.clone()));
 
             // Stream out the file.
-            let (read, found) = try!(reader.stream_until_token(&crlf_boundary, &mut file));
+            let (read, found) = try!(reader.stream_until_token(&lt_boundary, &mut file));
             if ! found { return Err(Error::EofInFile); }
             filepart.size = Some(read);
 
@@ -294,7 +315,7 @@ fn inner<R: BufRead>(
             nodes.push(Node::File(filepart));
         } else {
             buf.truncate(0); // start fresh
-            let (_, found) = try!(reader.stream_until_token(&crlf_boundary, &mut buf));
+            let (_, found) = try!(reader.stream_until_token(&lt_boundary, &mut buf));
             if ! found { return Err(Error::EofInPart); }
 
             nodes.push(Node::Part(Part {
@@ -328,13 +349,6 @@ pub fn get_multipart_boundary(headers: &Headers) -> Result<Vec<u8>, Error> {
         }
     }
     Err(Error::BoundaryNotSpecified)
-}
-
-fn prepend_crlf(input: &[u8]) -> Vec<u8> {
-    let mut output = Vec::with_capacity(2 + input.len());
-    output.extend(b"\r\n".iter().cloned());
-    output.extend(input.clone());
-    output
 }
 
 #[inline]

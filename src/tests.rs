@@ -177,6 +177,43 @@ fn mixed_parser() {
     }
 }
 
+#[test]
+fn test_line_feed() {
+    let input = b"POST /test HTTP/1.1\r\n\
+                  Host: example.domain\r\n\
+                  Cookie: session_id=a36ZVwAAAACDQ9gzBCzDVZ1VNrnZEI1U\r\n\
+                  Content-Type: multipart/form-data; boundary=\"ABCDEFG\"\r\n\
+                  Content-Length: 10000\r\n\
+                  \r\n\
+                  --ABCDEFG\n\
+                  Content-Disposition: form-data; name=\"consignment_id\"\n\
+                  \n\
+                  4\n\
+                  --ABCDEFG\n\
+                  Content-Disposition: form-data; name=\"note\"\n\
+                  \n\
+                  Check out this file about genomes!\n\
+                  --ABCDEFG\n\
+                  Content-Type: text/plain\n\
+                  Content-Disposition: attachment; filename=genome.txt\n\
+                  \n\
+                  This is a text file about genomes, apparently.\n\
+                  Read on.\n\
+                  --ABCDEFG--";
+
+    let mut mock = MockStream::with_input(input);
+
+    let mock: &mut NetworkStream = &mut mock;
+    let mut stream = BufReader::new(mock);
+    let sock: SocketAddr = "127.0.0.1:80".parse().unwrap();
+    let req = HyperRequest::new(&mut stream, sock).unwrap();
+    let (_, _, headers, _, _, mut reader) = req.deconstruct();
+
+    if let Err(e) = parse_multipart_body(&mut reader, &headers, false) {
+        panic!("{}", e);
+    }
+}
+
 #[inline]
 fn get_content_disposition_name(cd: &ContentDisposition) -> Option<String> {
     if let Some(&DispositionParam::Ext(_, ref value)) = cd.parameters.iter()
