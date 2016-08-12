@@ -15,7 +15,9 @@ use hyper::server::Request as HyperRequest;
 
 use mock::MockStream;
 
-use hyper::header::{ContentDisposition, DispositionParam};
+use hyper::header::{Headers, ContentDisposition, DispositionParam, ContentType,
+                    DispositionType};
+use mime::{Mime, TopLevel, SubLevel};
 
 #[test]
 fn parser() {
@@ -226,4 +228,47 @@ fn get_content_disposition_name(cd: &ContentDisposition) -> Option<String> {
     } else {
         None
     }
+}
+
+#[test]
+fn test_output() {
+    let mut output: Vec<u8> = Vec::new();
+    let boundary = generate_boundary();
+
+    let first_name = Part {
+        headers: {
+            let mut h = Headers::new();
+            h.set(ContentType(Mime(TopLevel::Text, SubLevel::Plain, vec![])));
+            h.set(ContentDisposition {
+                disposition: DispositionType::Ext("form-data".to_owned()),
+                parameters: vec![DispositionParam::Ext("name".to_owned(), "first_name".to_owned())],
+            });
+            h
+        },
+        body: b"Michael".to_vec(),
+    };
+
+    let last_name = Part {
+        headers: {
+            let mut h = Headers::new();
+            h.set(ContentType(Mime(TopLevel::Text, SubLevel::Plain, vec![])));
+            h.set(ContentDisposition {
+                disposition: DispositionType::Ext("form-data".to_owned()),
+                parameters: vec![DispositionParam::Ext("name".to_owned(), "last_name".to_owned())],
+            });
+            h
+        },
+        body: b"Dilger".to_vec(),
+    };
+
+    let mut nodes: Vec<Node> = Vec::new();
+    nodes.push(Node::Part(first_name));
+    nodes.push(Node::Part(last_name));
+
+    assert!(stream_multipart(&mut output, &boundary, &nodes).is_ok());
+
+    let string = String::from_utf8_lossy(&output);
+
+    // Hard to compare programmatically since the headers could come in any order.
+    println!("{}", string);
 }

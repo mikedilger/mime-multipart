@@ -26,7 +26,7 @@ mod tests;
 pub use error::Error;
 
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::borrow::Cow;
 use std::ops::Drop;
@@ -212,7 +212,7 @@ fn inner<R: BufRead>(
     let (_, found) = try!(reader.stream_until_token(&boundary, &mut buf));
     if ! found { return Err(Error::EofBeforeFirstBoundary); }
 
-    // Define the bounary, including the line terminator preceding it.
+    // Define the boundary, including the line terminator preceding it.
     // Use their first line terminator to determine whether to use CRLF or LF.
     let (lt, ltlt, lt_boundary) = {
         let peeker = try!(reader.fill_buf());
@@ -401,4 +401,80 @@ fn charset_decode(charset: &Charset, bytes: &[u8]) -> Result<String, Cow<'static
             _ => return Err("Encoding is not supported".into()),
         },
     })
+}
+
+/// Generate a valid multipart boundary, statistically unlikely to be found within
+/// the content of the parts.
+pub fn generate_boundary() -> Vec<u8> {
+    TextNonce::sized(68).unwrap().into_string().into_bytes()
+}
+
+/// Stream a multipart body to the output `stream` given, made up of the `parts`
+/// given.  Headers are NOT included in this stream, caller must deal with those
+/// prior to calling stream_multipart().
+pub fn stream_multipart<S: Write>(
+    stream: &mut S,
+    boundary: &Vec<u8>,
+    nodes: &Vec<Node>)
+    -> Result<(), Error>
+{
+    for node in nodes {
+        // write a boundary
+        try!(stream.write(b"--"));
+        try!(stream.write(&boundary));
+        try!(stream.write(b"\r\n"));
+
+        match node {
+            &Node::Part(ref part) => {
+                // write the part's headers
+                for header in part.headers.iter() {
+                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                }
+
+                // write the blank line
+                try!(stream.write(b"\r\n"));
+
+                // Write the part's content
+                try!(stream.write(&part.body));
+            },
+            &Node::File(ref filepart) => {
+                // write the part's headers
+                for header in filepart.headers.iter() {
+                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                }
+
+                // write the blank line
+                try!(stream.write(b"\r\n"));
+
+                // Write out the files's content
+                let mut file = try!(File::open(&filepart.path));
+                try!(::std::io::copy(&mut file, stream));
+            },
+            &Node::Multipart((ref headers, ref subnodes)) => {
+                // Get boundary
+                let boundary = try!(get_multipart_boundary(headers));
+
+                // write the multipart headers
+                for header in headers.iter() {
+                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                }
+
+                // write the blank line
+                try!(stream.write(b"\r\n"));
+
+                // Recurse
+                try!(stream_multipart(stream, &boundary, &subnodes));
+            },
+        }
+
+        // write a line terminator
+        try!(stream.write(b"\r\n"));
+    }
+
+    // write a final boundary
+    try!(stream.write(b"--"));
+    try!(stream.write(&boundary));
+    try!(stream.write(b"--"));
+
+    Ok(())
 }
