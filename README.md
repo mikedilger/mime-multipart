@@ -11,11 +11,6 @@ If you are specifically dealing with `multipart/formdata`, you may be interested
 https://github.com/mikedilger/formdata which uses this crate and takes it a step
 further.
 
-## Limitations
-
-Currently we are not generating 'multipart/*', but this will be quite easy to do
-once someone needs such functionality.  See issue #1.
-
 ## License
 
 Licensed under either of
