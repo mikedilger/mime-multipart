@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-256' class='srclink' href='../src/mime_multipart/src/lib.rs.html#188-198' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-252' class='srclink' href='../src/mime_multipart/src/lib.rs.html#188-198' title='goto source code'>[src]</a></span></h1>
 <pre class='rust fn'>pub fn parse_multipart_body&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a>&gt;(stream: &amp;mut S, headers: &amp;<a class='struct' href='https://hyperium.github.io/hyper/hyper/header/struct.Headers.html' title='hyper::header::Headers'>Headers</a>, always_use_files: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../mime_multipart/enum.Node.html' title='mime_multipart::Node'>Node</a>&gt;,&nbsp;<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>&gt;</pre><div class='docblock'><p>Parse a MIME <code>multipart/*</code> from a <code>Read</code>able stream into a <code>Vec</code> of <code>Node</code>s, streaming
 files to disk and keeping the rest in memory.  Recursive <code>multipart/*</code> parts will are
 parsed as well and returned within a <code>Node::Multipart</code> variant.</p>

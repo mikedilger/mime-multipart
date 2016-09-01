@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-390' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-480' title='goto source code'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
 <table><tr><td><code>pub use error::<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
@@ -85,6 +85,14 @@ container containing nested parts.</p>
                        </tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
 <table>
                        <tr class=' module-item'>
+                           <td><a class='fn' href='fn.generate_boundary.html'
+                                  title='mime_multipart::generate_boundary'>generate_boundary</a></td>
+                           <td class='docblock short'>
+                                <p>Generate a valid multipart boundary, statistically unlikely to be found within
+the content of the parts.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
                            <td><a class='fn' href='fn.get_multipart_boundary.html'
                                   title='mime_multipart::get_multipart_boundary'>get_multipart_boundary</a></td>
                            <td class='docblock short'>
@@ -107,6 +115,15 @@ parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
                                 <p>Parse a MIME <code>multipart/*</code> from a <code>Read</code>able stream into a <code>Vec</code> of <code>Node</code>s, streaming
 files to disk and keeping the rest in memory.  Recursive <code>multipart/*</code> parts will are
 parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.stream_multipart.html'
+                                  title='mime_multipart::stream_multipart'>stream_multipart</a></td>
+                           <td class='docblock short'>
+                                <p>Stream a multipart body to the output <code>stream</code> given, made up of the <code>parts</code>
+given.  Headers are NOT included in this stream, caller must deal with those
+prior to calling stream_multipart().</p>
                            </td>
                        </tr></table></section>
     <section id='search' class="content hidden"></section>
