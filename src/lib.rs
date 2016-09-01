@@ -410,8 +410,8 @@ pub fn generate_boundary() -> Vec<u8> {
 }
 
 /// Stream a multipart body to the output `stream` given, made up of the `parts`
-/// given.  Headers are NOT included in this stream, caller must deal with those
-/// prior to calling stream_multipart().
+/// given.  Top-level headers are NOT included in this stream; the caller must send
+/// those prior to calling stream_multipart().
 pub fn stream_multipart<S: Write>(
     stream: &mut S,
     boundary: &Vec<u8>,
