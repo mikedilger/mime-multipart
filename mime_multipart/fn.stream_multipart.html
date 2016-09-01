@@ -49,8 +49,8 @@
                    </a>
                </span><a id='src-379' class='srclink' href='../src/mime_multipart/src/lib.rs.html#415-480' title='goto source code'>[src]</a></span></h1>
 <pre class='rust fn'>pub fn stream_multipart&lt;S:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Write.html' title='std::io::Write'>Write</a>&gt;(stream: &amp;mut S, boundary: &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;, nodes: &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='enum' href='../mime_multipart/enum.Node.html' title='mime_multipart::Node'>Node</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>,&nbsp;<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>&gt;</pre><div class='docblock'><p>Stream a multipart body to the output <code>stream</code> given, made up of the <code>parts</code>
-given.  Headers are NOT included in this stream, caller must deal with those
-prior to calling stream_multipart().</p>
+given.  Top-level headers are NOT included in this stream; the caller must send
+those prior to calling stream_multipart().</p>
 </div></section>
     <section id='search' class="content hidden"></section>
 

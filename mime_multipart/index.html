@@ -122,8 +122,8 @@ parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
                                   title='mime_multipart::stream_multipart'>stream_multipart</a></td>
                            <td class='docblock short'>
                                 <p>Stream a multipart body to the output <code>stream</code> given, made up of the <code>parts</code>
-given.  Headers are NOT included in this stream, caller must deal with those
-prior to calling stream_multipart().</p>
+given.  Top-level headers are NOT included in this stream; the caller must send
+those prior to calling stream_multipart().</p>
                            </td>
                        </tr></table></section>
     <section id='search' class="content hidden"></section>
