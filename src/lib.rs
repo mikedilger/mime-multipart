@@ -145,7 +145,7 @@ pub enum Node {
 ///
 /// It is presumed that the headers are still in the stream.  If you have them separately,
 /// use `parse_multipart_body()` instead.
-pub fn parse_multipart<S: Read>(
+pub fn read_multipart<S: Read>(
     stream: &mut S,
     always_use_files: bool)
     -> Result<Vec<Node>, Error>
@@ -185,7 +185,7 @@ pub fn parse_multipart<S: Read>(
 ///
 /// It is presumed that you have the `Headers` already and the stream starts at the body.
 /// If the headers are still in the stream, use `parse_multipart()` instead.
-pub fn parse_multipart_body<S: Read>(
+pub fn read_multipart_body<S: Read>(
     stream: &mut S,
     headers: &Headers,
     always_use_files: bool)
@@ -411,44 +411,53 @@ pub fn generate_boundary() -> Vec<u8> {
 
 /// Stream a multipart body to the output `stream` given, made up of the `parts`
 /// given.  Top-level headers are NOT included in this stream; the caller must send
-/// those prior to calling stream_multipart().
-pub fn stream_multipart<S: Write>(
+/// those prior to calling write_multipart().
+/// Returns the number of bytes written, or an error.
+pub fn write_multipart<S: Write>(
     stream: &mut S,
     boundary: &Vec<u8>,
     nodes: &Vec<Node>)
-    -> Result<(), Error>
+    -> Result<usize, Error>
 {
+    let mut count: usize = 0;
+
     for node in nodes {
         // write a boundary
-        try!(stream.write(b"--"));
-        try!(stream.write(&boundary));
-        try!(stream.write(b"\r\n"));
+        count += try!(stream.write(b"--"));
+        count += try!(stream.write(&boundary));
+        count += try!(stream.write(b"\r\n"));
 
         match node {
             &Node::Part(ref part) => {
                 // write the part's headers
                 for header in part.headers.iter() {
-                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                    count += try!(stream.write(header.name().as_bytes()));
+                    count += try!(stream.write(b": "));
+                    count += try!(stream.write(header.value_string().as_bytes()));
+                    count += try!(stream.write(b"\r\n"));
                 }
 
                 // write the blank line
-                try!(stream.write(b"\r\n"));
+                count += try!(stream.write(b"\r\n"));
 
                 // Write the part's content
-                try!(stream.write(&part.body));
+                count += try!(stream.write(&part.body));
             },
             &Node::File(ref filepart) => {
                 // write the part's headers
                 for header in filepart.headers.iter() {
-                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                    count += try!(stream.write(header.name().as_bytes()));
+                    count += try!(stream.write(b": "));
+                    count += try!(stream.write(header.value_string().as_bytes()));
+                    count += try!(stream.write(b"\r\n"));
                 }
 
                 // write the blank line
-                try!(stream.write(b"\r\n"));
+                count += try!(stream.write(b"\r\n"));
 
                 // Write out the files's content
                 let mut file = try!(File::open(&filepart.path));
-                try!(::std::io::copy(&mut file, stream));
+                count += try!(::std::io::copy(&mut file, stream)) as usize;
             },
             &Node::Multipart((ref headers, ref subnodes)) => {
                 // Get boundary
@@ -456,25 +465,28 @@ pub fn stream_multipart<S: Write>(
 
                 // write the multipart headers
                 for header in headers.iter() {
-                    try!(write!(stream, "{}: {}\r\n", header.name(), header.value_string()));
+                    count += try!(stream.write(header.name().as_bytes()));
+                    count += try!(stream.write(b": "));
+                    count += try!(stream.write(header.value_string().as_bytes()));
+                    count += try!(stream.write(b"\r\n"));
                 }
 
                 // write the blank line
-                try!(stream.write(b"\r\n"));
+                count += try!(stream.write(b"\r\n"));
 
                 // Recurse
-                try!(stream_multipart(stream, &boundary, &subnodes));
+                count += try!(write_multipart(stream, &boundary, &subnodes));
             },
         }
 
         // write a line terminator
-        try!(stream.write(b"\r\n"));
+        count += try!(stream.write(b"\r\n"));
     }
 
     // write a final boundary
-    try!(stream.write(b"--"));
-    try!(stream.write(&boundary));
-    try!(stream.write(b"--"));
+    count += try!(stream.write(b"--"));
+    count += try!(stream.write(&boundary));
+    count += try!(stream.write(b"--"));
 
-    Ok(())
+    Ok(count)
 }

@@ -52,7 +52,7 @@ fn parser() {
     let req = HyperRequest::new(&mut stream, sock).unwrap();
     let (_, _, headers, _, _, mut reader) = req.deconstruct();
 
-    match parse_multipart_body(&mut reader, &headers, false) {
+    match read_multipart_body(&mut reader, &headers, false) {
         Ok(nodes) => {
 
             assert_eq!(nodes.len(), 3);
@@ -128,7 +128,7 @@ fn mixed_parser() {
     let req = HyperRequest::new(&mut stream, sock).unwrap();
     let (_, _, headers, _, _, mut reader) = req.deconstruct();
 
-    match parse_multipart_body(&mut reader, &headers, false) {
+    match read_multipart_body(&mut reader, &headers, false) {
         Ok(nodes) => {
 
             assert_eq!(nodes.len(), 2);
@@ -211,7 +211,7 @@ fn test_line_feed() {
     let req = HyperRequest::new(&mut stream, sock).unwrap();
     let (_, _, headers, _, _, mut reader) = req.deconstruct();
 
-    if let Err(e) = parse_multipart_body(&mut reader, &headers, false) {
+    if let Err(e) = read_multipart_body(&mut reader, &headers, false) {
         panic!("{}", e);
     }
 }
@@ -265,10 +265,12 @@ fn test_output() {
     nodes.push(Node::Part(first_name));
     nodes.push(Node::Part(last_name));
 
-    assert!(stream_multipart(&mut output, &boundary, &nodes).is_ok());
+    assert!(write_multipart(&mut output, &boundary, &nodes).is_ok());
 
     let string = String::from_utf8_lossy(&output);
 
     // Hard to compare programmatically since the headers could come in any order.
     println!("{}", string);
+
+    assert_eq!(output.len(), 390);
 }
