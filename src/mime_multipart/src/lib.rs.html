@@ -522,6 +522,18 @@
 <span id="478">478</span>
 <span id="479">479</span>
 <span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
 </pre><pre class='rust '>
 <span class='comment'>// Copyright 2016 mime-multipart Developers</span>
 <span class='comment'>//</span>
@@ -670,7 +682,7 @@
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// It is presumed that the headers are still in the stream.  If you have them separately,</span>
 <span class='doccomment'>/// use `parse_multipart_body()` instead.</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>parse_multipart</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Read</span><span class='op'>&gt;</span>(
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>read_multipart</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Read</span><span class='op'>&gt;</span>(
     <span class='ident'>stream</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>S</span>,
     <span class='ident'>always_use_files</span>: <span class='ident'>bool</span>)
     <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>Node</span><span class='op'>&gt;</span>, <span class='ident'>Error</span><span class='op'>&gt;</span>
@@ -710,7 +722,7 @@
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// It is presumed that you have the `Headers` already and the stream starts at the body.</span>
 <span class='doccomment'>/// If the headers are still in the stream, use `parse_multipart()` instead.</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>parse_multipart_body</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Read</span><span class='op'>&gt;</span>(
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>read_multipart_body</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Read</span><span class='op'>&gt;</span>(
     <span class='ident'>stream</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>S</span>,
     <span class='ident'>headers</span>: <span class='kw-2'>&amp;</span><span class='ident'>Headers</span>,
     <span class='ident'>always_use_files</span>: <span class='ident'>bool</span>)
@@ -936,44 +948,53 @@
 
 <span class='doccomment'>/// Stream a multipart body to the output `stream` given, made up of the `parts`</span>
 <span class='doccomment'>/// given.  Top-level headers are NOT included in this stream; the caller must send</span>
-<span class='doccomment'>/// those prior to calling stream_multipart().</span>
-<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>stream_multipart</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Write</span><span class='op'>&gt;</span>(
+<span class='doccomment'>/// those prior to calling write_multipart().</span>
+<span class='doccomment'>/// Returns the number of bytes written, or an error.</span>
+<span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>write_multipart</span><span class='op'>&lt;</span><span class='ident'>S</span>: <span class='ident'>Write</span><span class='op'>&gt;</span>(
     <span class='ident'>stream</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>S</span>,
     <span class='ident'>boundary</span>: <span class='kw-2'>&amp;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>,
     <span class='ident'>nodes</span>: <span class='kw-2'>&amp;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>Node</span><span class='op'>&gt;</span>)
-    <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span>(), <span class='ident'>Error</span><span class='op'>&gt;</span>
+    <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>usize</span>, <span class='ident'>Error</span><span class='op'>&gt;</span>
 {
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>count</span>: <span class='ident'>usize</span> <span class='op'>=</span> <span class='number'>0</span>;
+
     <span class='kw'>for</span> <span class='ident'>node</span> <span class='kw'>in</span> <span class='ident'>nodes</span> {
         <span class='comment'>// write a boundary</span>
-        <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
-        <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>boundary</span>));
-        <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
+        <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
+        <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>boundary</span>));
+        <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
 
         <span class='kw'>match</span> <span class='ident'>node</span> {
             <span class='kw-2'>&amp;</span><span class='ident'>Node</span>::<span class='ident'>Part</span>(<span class='kw-2'>ref</span> <span class='ident'>part</span>) <span class='op'>=&gt;</span> {
                 <span class='comment'>// write the part&#39;s headers</span>
                 <span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>part</span>.<span class='ident'>headers</span>.<span class='ident'>iter</span>() {
-                    <span class='macro'>try</span><span class='macro'>!</span>(<span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>stream</span>, <span class='string'>&quot;{}: {}\r\n&quot;</span>, <span class='ident'>header</span>.<span class='ident'>name</span>(), <span class='ident'>header</span>.<span class='ident'>value_string</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>name</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;: &quot;</span>));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>value_string</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
                 }
 
                 <span class='comment'>// write the blank line</span>
-                <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
 
                 <span class='comment'>// Write the part&#39;s content</span>
-                <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>part</span>.<span class='ident'>body</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>part</span>.<span class='ident'>body</span>));
             },
             <span class='kw-2'>&amp;</span><span class='ident'>Node</span>::<span class='ident'>File</span>(<span class='kw-2'>ref</span> <span class='ident'>filepart</span>) <span class='op'>=&gt;</span> {
                 <span class='comment'>// write the part&#39;s headers</span>
                 <span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>filepart</span>.<span class='ident'>headers</span>.<span class='ident'>iter</span>() {
-                    <span class='macro'>try</span><span class='macro'>!</span>(<span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>stream</span>, <span class='string'>&quot;{}: {}\r\n&quot;</span>, <span class='ident'>header</span>.<span class='ident'>name</span>(), <span class='ident'>header</span>.<span class='ident'>value_string</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>name</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;: &quot;</span>));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>value_string</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
                 }
 
                 <span class='comment'>// write the blank line</span>
-                <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
 
                 <span class='comment'>// Write out the files&#39;s content</span>
                 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>file</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>File</span>::<span class='ident'>open</span>(<span class='kw-2'>&amp;</span><span class='ident'>filepart</span>.<span class='ident'>path</span>));
-                <span class='macro'>try</span><span class='macro'>!</span>(::<span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>copy</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>file</span>, <span class='ident'>stream</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(::<span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>copy</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>file</span>, <span class='ident'>stream</span>)) <span class='kw'>as</span> <span class='ident'>usize</span>;
             },
             <span class='kw-2'>&amp;</span><span class='ident'>Node</span>::<span class='ident'>Multipart</span>((<span class='kw-2'>ref</span> <span class='ident'>headers</span>, <span class='kw-2'>ref</span> <span class='ident'>subnodes</span>)) <span class='op'>=&gt;</span> {
                 <span class='comment'>// Get boundary</span>
@@ -981,27 +1002,30 @@
 
                 <span class='comment'>// write the multipart headers</span>
                 <span class='kw'>for</span> <span class='ident'>header</span> <span class='kw'>in</span> <span class='ident'>headers</span>.<span class='ident'>iter</span>() {
-                    <span class='macro'>try</span><span class='macro'>!</span>(<span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>stream</span>, <span class='string'>&quot;{}: {}\r\n&quot;</span>, <span class='ident'>header</span>.<span class='ident'>name</span>(), <span class='ident'>header</span>.<span class='ident'>value_string</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>name</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;: &quot;</span>));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='ident'>header</span>.<span class='ident'>value_string</span>().<span class='ident'>as_bytes</span>()));
+                    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
                 }
 
                 <span class='comment'>// write the blank line</span>
-                <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
 
                 <span class='comment'>// Recurse</span>
-                <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream_multipart</span>(<span class='ident'>stream</span>, <span class='kw-2'>&amp;</span><span class='ident'>boundary</span>, <span class='kw-2'>&amp;</span><span class='ident'>subnodes</span>));
+                <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>write_multipart</span>(<span class='ident'>stream</span>, <span class='kw-2'>&amp;</span><span class='ident'>boundary</span>, <span class='kw-2'>&amp;</span><span class='ident'>subnodes</span>));
             },
         }
 
         <span class='comment'>// write a line terminator</span>
-        <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
+        <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;\r\n&quot;</span>));
     }
 
     <span class='comment'>// write a final boundary</span>
-    <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
-    <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>boundary</span>));
-    <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
+    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
+    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='kw-2'>&amp;</span><span class='ident'>boundary</span>));
+    <span class='ident'>count</span> <span class='op'>+=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>stream</span>.<span class='ident'>write</span>(<span class='string'>b&quot;--&quot;</span>));
 
-    <span class='prelude-val'>Ok</span>(())
+    <span class='prelude-val'>Ok</span>(<span class='ident'>count</span>)
 }
 </pre>
 </section>
