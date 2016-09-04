@@ -409,6 +409,18 @@ pub fn generate_boundary() -> Vec<u8> {
     TextNonce::sized(68).unwrap().into_string().into_bytes()
 }
 
+// Convenience method, like write_all(), but returns the count of bytes written.
+trait WriteAllCount {
+    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>;
+}
+impl<T: Write> WriteAllCount for T {
+    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>
+    {
+        try!(self.write_all(buf));
+        Ok(buf.len())
+    }
+}
+
 /// Stream a multipart body to the output `stream` given, made up of the `parts`
 /// given.  Top-level headers are NOT included in this stream; the caller must send
 /// those prior to calling write_multipart().
@@ -492,14 +504,96 @@ pub fn write_multipart<S: Write>(
     Ok(count)
 }
 
-// Convenience method, like write_all(), but returns the count of bytes written.
-trait WriteAllCount {
-    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>;
+pub fn write_chunk<S: Write>(
+    stream: &mut S,
+    chunk: &[u8]) -> Result<(), ::std::io::Error>
+{
+    try!(write!(stream, "{:x}\r\n", chunk.len()));
+    try!(stream.write_all(chunk));
+    try!(stream.write_all(b"\r\n"));
+    Ok(())
 }
-impl<T: Write> WriteAllCount for T {
-    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>
-    {
-        try!(self.write_all(buf));
-        Ok(buf.len())
+
+/// Stream a multipart body to the output `stream` given, made up of the `parts`
+/// given, using Tranfer-Encoding: Chunked.  Top-level headers are NOT included in this
+/// stream; the caller must send those prior to calling write_multipart().
+pub fn write_multipart_chunked<S: Write>(
+    stream: &mut S,
+    boundary: &Vec<u8>,
+    nodes: &Vec<Node>)
+    -> Result<(), Error>
+{
+    for node in nodes {
+        // write a boundary
+        try!(write_chunk(stream, b"--"));
+        try!(write_chunk(stream, &boundary));
+        try!(write_chunk(stream, b"\r\n"));
+
+        match node {
+            &Node::Part(ref part) => {
+                // write the part's headers
+                for header in part.headers.iter() {
+                    try!(write_chunk(stream, header.name().as_bytes()));
+                    try!(write_chunk(stream, b": "));
+                    try!(write_chunk(stream, header.value_string().as_bytes()));
+                    try!(write_chunk(stream, b"\r\n"));
+                }
+
+                // write the blank line
+                try!(write_chunk(stream, b"\r\n"));
+
+                // Write the part's content
+                try!(write_chunk(stream, &part.body));
+            },
+            &Node::File(ref filepart) => {
+                // write the part's headers
+                for header in filepart.headers.iter() {
+                    try!(write_chunk(stream, header.name().as_bytes()));
+                    try!(write_chunk(stream, b": "));
+                    try!(write_chunk(stream, header.value_string().as_bytes()));
+                    try!(write_chunk(stream, b"\r\n"));
+                }
+
+                // write the blank line
+                try!(write_chunk(stream, b"\r\n"));
+
+                // Write out the files's length
+                let metadata = try!(::std::fs::metadata(&filepart.path));
+                try!(write!(stream, "{:x}\r\n", metadata.len()));
+
+                // Write out the file's content
+                let mut file = try!(File::open(&filepart.path));
+                try!(::std::io::copy(&mut file, stream)) as usize;
+                try!(stream.write(b"\r\n"));
+            },
+            &Node::Multipart((ref headers, ref subnodes)) => {
+                // Get boundary
+                let boundary = try!(get_multipart_boundary(headers));
+
+                // write the multipart headers
+                for header in headers.iter() {
+                    try!(write_chunk(stream, header.name().as_bytes()));
+                    try!(write_chunk(stream, b": "));
+                    try!(write_chunk(stream, header.value_string().as_bytes()));
+                    try!(write_chunk(stream, b"\r\n"));
+                }
+
+                // write the blank line
+                try!(write_chunk(stream, b"\r\n"));
+
+                // Recurse
+                try!(write_multipart_chunked(stream, &boundary, &subnodes));
+            },
+        }
+
+        // write a line terminator
+        try!(write_chunk(stream, b"\r\n"));
     }
+
+    // write a final boundary
+    try!(write_chunk(stream, b"--"));
+    try!(write_chunk(stream, &boundary));
+    try!(write_chunk(stream, b"--"));
+
+    Ok(())
 }

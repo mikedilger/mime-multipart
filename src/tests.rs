@@ -274,3 +274,48 @@ fn test_output() {
 
     assert_eq!(output.len(), 390);
 }
+
+#[test]
+fn test_chunked() {
+    let mut output: Vec<u8> = Vec::new();
+    let boundary = generate_boundary();
+
+    let first_name = Part {
+        headers: {
+            let mut h = Headers::new();
+            h.set(ContentType(Mime(TopLevel::Text, SubLevel::Plain, vec![])));
+            h.set(ContentDisposition {
+                disposition: DispositionType::Ext("form-data".to_owned()),
+                parameters: vec![DispositionParam::Ext("name".to_owned(), "first_name".to_owned())],
+            });
+            h
+        },
+        body: b"Michael".to_vec(),
+    };
+
+    let last_name = Part {
+        headers: {
+            let mut h = Headers::new();
+            h.set(ContentType(Mime(TopLevel::Text, SubLevel::Plain, vec![])));
+            h.set(ContentDisposition {
+                disposition: DispositionType::Ext("form-data".to_owned()),
+                parameters: vec![DispositionParam::Ext("name".to_owned(), "last_name".to_owned())],
+            });
+            h
+        },
+        body: b"Dilger".to_vec(),
+    };
+
+    let mut nodes: Vec<Node> = Vec::new();
+    nodes.push(Node::Part(first_name));
+    nodes.push(Node::Part(last_name));
+
+    assert!(write_multipart_chunked(&mut output, &boundary, &nodes).is_ok());
+
+    let string = String::from_utf8_lossy(&output);
+
+    // Hard to compare programmatically since the headers could come in any order.
+    println!("{}", string);
+
+    assert_eq!(output.len(), 552);
+}
