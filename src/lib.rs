@@ -423,37 +423,37 @@ pub fn write_multipart<S: Write>(
 
     for node in nodes {
         // write a boundary
-        count += try!(stream.write(b"--"));
-        count += try!(stream.write(&boundary));
-        count += try!(stream.write(b"\r\n"));
+        count += try!(stream.write_all_count(b"--"));
+        count += try!(stream.write_all_count(&boundary));
+        count += try!(stream.write_all_count(b"\r\n"));
 
         match node {
             &Node::Part(ref part) => {
                 // write the part's headers
                 for header in part.headers.iter() {
-                    count += try!(stream.write(header.name().as_bytes()));
-                    count += try!(stream.write(b": "));
-                    count += try!(stream.write(header.value_string().as_bytes()));
-                    count += try!(stream.write(b"\r\n"));
+                    count += try!(stream.write_all_count(header.name().as_bytes()));
+                    count += try!(stream.write_all_count(b": "));
+                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
+                    count += try!(stream.write_all_count(b"\r\n"));
                 }
 
                 // write the blank line
-                count += try!(stream.write(b"\r\n"));
+                count += try!(stream.write_all_count(b"\r\n"));
 
                 // Write the part's content
-                count += try!(stream.write(&part.body));
+                count += try!(stream.write_all_count(&part.body));
             },
             &Node::File(ref filepart) => {
                 // write the part's headers
                 for header in filepart.headers.iter() {
-                    count += try!(stream.write(header.name().as_bytes()));
-                    count += try!(stream.write(b": "));
-                    count += try!(stream.write(header.value_string().as_bytes()));
-                    count += try!(stream.write(b"\r\n"));
+                    count += try!(stream.write_all_count(header.name().as_bytes()));
+                    count += try!(stream.write_all_count(b": "));
+                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
+                    count += try!(stream.write_all_count(b"\r\n"));
                 }
 
                 // write the blank line
-                count += try!(stream.write(b"\r\n"));
+                count += try!(stream.write_all_count(b"\r\n"));
 
                 // Write out the files's content
                 let mut file = try!(File::open(&filepart.path));
@@ -465,14 +465,14 @@ pub fn write_multipart<S: Write>(
 
                 // write the multipart headers
                 for header in headers.iter() {
-                    count += try!(stream.write(header.name().as_bytes()));
-                    count += try!(stream.write(b": "));
-                    count += try!(stream.write(header.value_string().as_bytes()));
-                    count += try!(stream.write(b"\r\n"));
+                    count += try!(stream.write_all_count(header.name().as_bytes()));
+                    count += try!(stream.write_all_count(b": "));
+                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
+                    count += try!(stream.write_all_count(b"\r\n"));
                 }
 
                 // write the blank line
-                count += try!(stream.write(b"\r\n"));
+                count += try!(stream.write_all_count(b"\r\n"));
 
                 // Recurse
                 count += try!(write_multipart(stream, &boundary, &subnodes));
@@ -480,13 +480,25 @@ pub fn write_multipart<S: Write>(
         }
 
         // write a line terminator
-        count += try!(stream.write(b"\r\n"));
+        count += try!(stream.write_all_count(b"\r\n"));
     }
 
     // write a final boundary
-    count += try!(stream.write(b"--"));
-    count += try!(stream.write(&boundary));
-    count += try!(stream.write(b"--"));
+    count += try!(stream.write_all_count(b"--"));
+    count += try!(stream.write_all_count(&boundary));
+    count += try!(stream.write_all_count(b"--"));
 
     Ok(count)
+}
+
+// Convenience method, like write_all(), but returns the count of bytes written.
+trait WriteAllCount {
+    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>;
+}
+impl<T: Write> WriteAllCount for T {
+    fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>
+    {
+        try!(self.write_all(buf));
+        Ok(buf.len())
+    }
 }
