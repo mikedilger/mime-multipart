@@ -458,6 +458,7 @@ pub fn write_multipart<S: Write>(
                 // Write out the files's content
                 let mut file = try!(File::open(&filepart.path));
                 count += try!(::std::io::copy(&mut file, stream)) as usize;
+                count += try!(stream.write_all_count(b"\r\n"));
             },
             &Node::Multipart((ref headers, ref subnodes)) => {
                 // Get boundary
