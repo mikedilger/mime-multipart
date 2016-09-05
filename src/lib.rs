@@ -595,5 +595,8 @@ pub fn write_multipart_chunked<S: Write>(
     try!(write_chunk(stream, &boundary));
     try!(write_chunk(stream, b"--"));
 
+    // Write an empty chunk to signal the end of the body
+    try!(write_chunk(stream, b""));
+
     Ok(())
 }
