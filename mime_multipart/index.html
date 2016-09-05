@@ -47,7 +47,7 @@
                    <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                        [<span class='inner'>&#x2212;</span>]
                    </a>
-               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-492' title='goto source code'>[src]</a></span></h1>
+               </span><a id='src-0' class='srclink' href='../src/mime_multipart/src/lib.rs.html#8-599' title='goto source code'>[src]</a></span></h1>
 <h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
 <table><tr><td><code>pub use error::<a class='enum' href='../mime_multipart/error/enum.Error.html' title='mime_multipart::error::Error'>Error</a>;</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
@@ -118,6 +118,13 @@ parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
                            </td>
                        </tr>
                        <tr class=' module-item'>
+                           <td><a class='fn' href='fn.write_chunk.html'
+                                  title='mime_multipart::write_chunk'>write_chunk</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
                            <td><a class='fn' href='fn.write_multipart.html'
                                   title='mime_multipart::write_multipart'>write_multipart</a></td>
                            <td class='docblock short'>
@@ -125,6 +132,15 @@ parsed as well and returned within a <code>Node::Multipart</code> variant.</p>
 given.  Top-level headers are NOT included in this stream; the caller must send
 those prior to calling write_multipart().
 Returns the number of bytes written, or an error.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='fn' href='fn.write_multipart_chunked.html'
+                                  title='mime_multipart::write_multipart_chunked'>write_multipart_chunked</a></td>
+                           <td class='docblock short'>
+                                <p>Stream a multipart body to the output <code>stream</code> given, made up of the <code>parts</code>
+given, using Tranfer-Encoding: Chunked.  Top-level headers are NOT included in this
+stream; the caller must send those prior to calling write_multipart().</p>
                            </td>
                        </tr></table></section>
     <section id='search' class="content hidden"></section>
