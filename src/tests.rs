@@ -265,7 +265,11 @@ fn test_output() {
     nodes.push(Node::Part(first_name));
     nodes.push(Node::Part(last_name));
 
-    assert!(write_multipart(&mut output, &boundary, &nodes).is_ok());
+    let count = match write_multipart(&mut output, &boundary, &nodes) {
+        Ok(c) => c,
+        Err(e) => panic!("{:?}", e),
+    };
+    assert_eq!(count, output.len());
 
     let string = String::from_utf8_lossy(&output);
 
@@ -317,5 +321,5 @@ fn test_chunked() {
     // Hard to compare programmatically since the headers could come in any order.
     println!("{}", string);
 
-    assert_eq!(output.len(), 552);
+    assert_eq!(output.len(), 557);
 }
