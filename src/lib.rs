@@ -516,7 +516,7 @@ pub fn write_chunk<S: Write>(
 
 /// Stream a multipart body to the output `stream` given, made up of the `parts`
 /// given, using Tranfer-Encoding: Chunked.  Top-level headers are NOT included in this
-/// stream; the caller must send those prior to calling write_multipart().
+/// stream; the caller must send those prior to calling write_multipart_chunked().
 pub fn write_multipart_chunked<S: Write>(
     stream: &mut S,
     boundary: &Vec<u8>,
