@@ -162,7 +162,7 @@ pub fn read_multipart<S: Read>(
     buf.extend(b"\r\n\r\n".iter().cloned());
 
     // Parse the headers
-    let mut header_memory = [httparse::EMPTY_HEADER; 16];
+    let mut header_memory = [httparse::EMPTY_HEADER; 64];
     let headers = try!(match httparse::parse_headers(&buf, &mut header_memory) {
         Ok(httparse::Status::Complete((_, raw_headers))) => {
             Headers::from_raw(raw_headers).map_err(|e| From::from(e))
