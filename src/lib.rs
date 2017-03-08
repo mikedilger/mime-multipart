@@ -256,14 +256,16 @@ fn inner<R: BufRead>(
         buf.extend(ltlt.iter().cloned());
 
         // Parse the headers
-        let mut header_memory = [httparse::EMPTY_HEADER; 4];
-        let part_headers = try!(match httparse::parse_headers(&buf, &mut header_memory) {
-            Ok(httparse::Status::Complete((_, raw_headers))) => {
-                Headers::from_raw(raw_headers).map_err(|e| From::from(e))
-            },
-            Ok(httparse::Status::Partial) => Err(Error::PartialHeaders),
-            Err(err) => Err(From::from(err)),
-        });
+        let part_headers = {
+            let mut header_memory = [httparse::EMPTY_HEADER; 4];
+            try!(match httparse::parse_headers(&buf, &mut header_memory) {
+                Ok(httparse::Status::Complete((_, raw_headers))) => {
+                    Headers::from_raw(raw_headers).map_err(|e| From::from(e))
+                },
+                Ok(httparse::Status::Partial) => Err(Error::PartialHeaders),
+                Err(err) => Err(From::from(err)),
+            })
+        };
 
         // Check for a nested multipart
         let nested = {
