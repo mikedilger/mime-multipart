@@ -1,6 +1,6 @@
 [package]
 name = "mime_multipart"
-version = "0.4.0"
+version = "0.4.1"
 description = "MIME multipart parsing, construction, and streaming"
 authors = ["Mike Dilger <mike@optcomp.nz>"]
 readme = "README.md"
