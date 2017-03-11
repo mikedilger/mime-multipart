@@ -12,9 +12,9 @@ keywords = ["mime", "multipart", "mixed"]
 [dependencies]
 hyper = { version = "0.10", default-features = false }
 mime = "0.2"
-httparse = "1.1"
+httparse = "1.2"
 tempdir = "0.3"
-textnonce = "0.4"
+textnonce = "0.5"
 log = "0.3"
 encoding = "0.2"
 buf-read-ext = "0.2"
