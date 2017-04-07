@@ -14,7 +14,7 @@ hyper = { version = "0.10", default-features = false }
 mime = "0.2"
 httparse = "1.2"
 tempdir = "0.3"
-textnonce = "0.5"
+textnonce = "0.6"
 log = "0.3"
 encoding = "0.2"
 buf-read-ext = "0.2"
