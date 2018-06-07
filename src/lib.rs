@@ -144,7 +144,7 @@ pub enum Node {
 /// parameter will be streamed to files.
 ///
 /// It is presumed that the headers are still in the stream.  If you have them separately,
-/// use `parse_multipart_body()` instead.
+/// use `read_multipart_body()` instead.
 pub fn read_multipart<S: Read>(
     stream: &mut S,
     always_use_files: bool)
@@ -184,7 +184,7 @@ pub fn read_multipart<S: Read>(
 /// parameter will be streamed to files.
 ///
 /// It is presumed that you have the `Headers` already and the stream starts at the body.
-/// If the headers are still in the stream, use `parse_multipart()` instead.
+/// If the headers are still in the stream, use `read_multipart()` instead.
 pub fn read_multipart_body<S: Read>(
     stream: &mut S,
     headers: &Headers,
