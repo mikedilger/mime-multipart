@@ -7,11 +7,9 @@
 
 extern crate httparse;
 extern crate hyper;
-#[macro_use]
 extern crate mime;
 extern crate tempdir;
 extern crate textnonce;
-#[macro_use]
 extern crate log;
 extern crate encoding;
 extern crate buf_read_ext;
