@@ -7,6 +7,7 @@
 
 extern crate httparse;
 extern crate hyper;
+#[macro_use]
 extern crate mime;
 extern crate tempdir;
 extern crate textnonce;
