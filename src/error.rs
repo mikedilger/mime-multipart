@@ -87,7 +87,7 @@ impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self)?;
         if self.source().is_some() {
-            try!( write!(f, ": {:?}", self.source().unwrap()) ); // recurse
+            write!(f, ": {:?}", self.source().unwrap())?; // recurse
         }
         Ok(())
     }

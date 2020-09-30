@@ -86,7 +86,7 @@ impl FilePart {
     /// deleted once the FilePart object goes out of scope).
     pub fn create(headers: Headers) -> Result<FilePart, Error> {
         // Setup a file to capture the contents.
-        let mut path = try!(TempDir::new("mime_multipart")).into_path();
+        let mut path = TempDir::new("mime_multipart")?.into_path();
         let tempdir = Some(path.clone());
         path.push(TextNonce::sized_urlsafe(32).unwrap().into_string());
         Ok(FilePart {
@@ -154,7 +154,7 @@ pub fn read_multipart<S: Read>(
 
     let mut buf: Vec<u8> = Vec::new();
 
-    let (_, found) = try!(reader.stream_until_token(b"\r\n\r\n", &mut buf));
+    let (_, found) = reader.stream_until_token(b"\r\n\r\n", &mut buf)?;
     if ! found { return Err(Error::EofInMainHeaders); }
 
     // Keep the CRLFCRLF as httparse will expect it
@@ -162,15 +162,15 @@ pub fn read_multipart<S: Read>(
 
     // Parse the headers
     let mut header_memory = [httparse::EMPTY_HEADER; 64];
-    let headers = try!(match httparse::parse_headers(&buf, &mut header_memory) {
+    let headers = match httparse::parse_headers(&buf, &mut header_memory) {
         Ok(httparse::Status::Complete((_, raw_headers))) => {
             Headers::from_raw(raw_headers).map_err(|e| From::from(e))
         },
         Ok(httparse::Status::Partial) => Err(Error::PartialHeaders),
         Err(err) => Err(From::from(err)),
-    });
+    }?;
 
-    try!(inner(&mut reader, &headers, &mut nodes, always_use_files));
+    inner(&mut reader, &headers, &mut nodes, always_use_files)?;
     Ok(nodes)
 }
 
@@ -192,7 +192,7 @@ pub fn read_multipart_body<S: Read>(
 {
     let mut reader = BufReader::with_capacity(4096, stream);
     let mut nodes: Vec<Node> = Vec::new();
-    try!(inner(&mut reader, headers, &mut nodes, always_use_files));
+    inner(&mut reader, headers, &mut nodes, always_use_files)?;
     Ok(nodes)
 }
 
@@ -205,16 +205,16 @@ fn inner<R: BufRead>(
 {
     let mut buf: Vec<u8> = Vec::new();
 
-    let boundary = try!(get_multipart_boundary(headers));
+    let boundary = get_multipart_boundary(headers)?;
 
     // Read past the initial boundary
-    let (_, found) = try!(reader.stream_until_token(&boundary, &mut buf));
+    let (_, found) = reader.stream_until_token(&boundary, &mut buf)?;
     if ! found { return Err(Error::EofBeforeFirstBoundary); }
 
     // Define the boundary, including the line terminator preceding it.
     // Use their first line terminator to determine whether to use CRLF or LF.
     let (lt, ltlt, lt_boundary) = {
-        let peeker = try!(reader.fill_buf());
+        let peeker = reader.fill_buf()?;
         if peeker.len() > 1 && &peeker[..2]==b"\r\n" {
             let mut output = Vec::with_capacity(2 + boundary.len());
             output.push(b'\r');
@@ -236,19 +236,19 @@ fn inner<R: BufRead>(
     loop {
         // If the next two lookahead characters are '--', parsing is finished.
         {
-            let peeker = try!(reader.fill_buf());
+            let peeker = reader.fill_buf()?;
             if peeker.len() >= 2 && &peeker[..2] == b"--" {
                 return Ok(());
             }
         }
 
         // Read the line terminator after the boundary
-        let (_, found) = try!(reader.stream_until_token(&lt, &mut buf));
+        let (_, found) = reader.stream_until_token(&lt, &mut buf)?;
         if ! found { return Err(Error::NoCrLfAfterBoundary); }
 
         // Read the headers (which end in 2 line terminators)
         buf.truncate(0); // start fresh
-        let (_, found) = try!(reader.stream_until_token(&ltlt, &mut buf));
+        let (_, found) = reader.stream_until_token(&ltlt, &mut buf)?;
         if ! found { return Err(Error::EofInPartHeaders); }
 
         // Keep the 2 line terminators as httparse will expect it
@@ -257,13 +257,13 @@ fn inner<R: BufRead>(
         // Parse the headers
         let part_headers = {
             let mut header_memory = [httparse::EMPTY_HEADER; 4];
-            try!(match httparse::parse_headers(&buf, &mut header_memory) {
+            match httparse::parse_headers(&buf, &mut header_memory) {
                 Ok(httparse::Status::Complete((_, raw_headers))) => {
                     Headers::from_raw(raw_headers).map_err(|e| From::from(e))
                 },
                 Ok(httparse::Status::Partial) => Err(Error::PartialHeaders),
                 Err(err) => Err(From::from(err)),
-            })
+            }?
         };
 
         // Check for a nested multipart
@@ -279,7 +279,7 @@ fn inner<R: BufRead>(
         if nested {
             // Recurse:
             let mut inner_nodes: Vec<Node> = Vec::new();
-            try!(inner(reader, &part_headers, &mut inner_nodes, always_use_files));
+            inner(reader, &part_headers, &mut inner_nodes, always_use_files)?;
             nodes.push(Node::Multipart((part_headers, inner_nodes)));
             continue;
         }
@@ -301,11 +301,11 @@ fn inner<R: BufRead>(
         };
         if is_file {
             // Setup a file to capture the contents.
-            let mut filepart = try!(FilePart::create(part_headers));
-            let mut file = try!(File::create(filepart.path.clone()));
+            let mut filepart = FilePart::create(part_headers)?;
+            let mut file = File::create(filepart.path.clone())?;
 
             // Stream out the file.
-            let (read, found) = try!(reader.stream_until_token(&lt_boundary, &mut file));
+            let (read, found) = reader.stream_until_token(&lt_boundary, &mut file)?;
             if ! found { return Err(Error::EofInFile); }
             filepart.size = Some(read);
 
@@ -316,7 +316,7 @@ fn inner<R: BufRead>(
             nodes.push(Node::File(filepart));
         } else {
             buf.truncate(0); // start fresh
-            let (_, found) = try!(reader.stream_until_token(&lt_boundary, &mut buf));
+            let (_, found) = reader.stream_until_token(&lt_boundary, &mut buf)?;
             if ! found { return Err(Error::EofInPart); }
 
             nodes.push(Node::Part(Part {
@@ -373,32 +373,32 @@ fn get_content_disposition_filename(cd: &ContentDisposition) -> Result<Option<St
 // rust-encoding crate.  Only supports encodings defined in both crates.
 fn charset_decode(charset: &Charset, bytes: &[u8]) -> Result<String, Cow<'static, str>> {
     Ok(match *charset {
-        Charset::Us_Ascii => try!(all::ASCII.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_1 => try!(all::ISO_8859_1.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_2 => try!(all::ISO_8859_2.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_3 => try!(all::ISO_8859_3.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_4 => try!(all::ISO_8859_4.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_5 => try!(all::ISO_8859_5.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_6 => try!(all::ISO_8859_6.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_7 => try!(all::ISO_8859_7.decode(bytes, DecoderTrap::Strict)),
-        Charset::Iso_8859_8 => try!(all::ISO_8859_8.decode(bytes, DecoderTrap::Strict)),
+        Charset::Us_Ascii => all::ASCII.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_1 => all::ISO_8859_1.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_2 => all::ISO_8859_2.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_3 => all::ISO_8859_3.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_4 => all::ISO_8859_4.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_5 => all::ISO_8859_5.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_6 => all::ISO_8859_6.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_7 => all::ISO_8859_7.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Iso_8859_8 => all::ISO_8859_8.decode(bytes, DecoderTrap::Strict)?,
         Charset::Iso_8859_9 => return Err("ISO_8859_9 is not supported".into()),
-        Charset::Iso_8859_10 => try!(all::ISO_8859_10.decode(bytes, DecoderTrap::Strict)),
+        Charset::Iso_8859_10 => all::ISO_8859_10.decode(bytes, DecoderTrap::Strict)?,
         Charset::Shift_Jis => return Err("Shift_Jis is not supported".into()),
-        Charset::Euc_Jp => try!(all::EUC_JP.decode(bytes, DecoderTrap::Strict)),
+        Charset::Euc_Jp => all::EUC_JP.decode(bytes, DecoderTrap::Strict)?,
         Charset::Iso_2022_Kr => return Err("Iso_2022_Kr is not supported".into()),
         Charset::Euc_Kr => return Err("Euc_Kr is not supported".into()),
-        Charset::Iso_2022_Jp => try!(all::ISO_2022_JP.decode(bytes, DecoderTrap::Strict)),
+        Charset::Iso_2022_Jp => all::ISO_2022_JP.decode(bytes, DecoderTrap::Strict)?,
         Charset::Iso_2022_Jp_2 => return Err("Iso_2022_Jp_2 is not supported".into()),
         Charset::Iso_8859_6_E => return Err("Iso_8859_6_E is not supported".into()),
         Charset::Iso_8859_6_I => return Err("Iso_8859_6_I is not supported".into()),
         Charset::Iso_8859_8_E => return Err("Iso_8859_8_E is not supported".into()),
         Charset::Iso_8859_8_I => return Err("Iso_8859_8_I is not supported".into()),
         Charset::Gb2312 => return Err("Gb2312 is not supported".into()),
-        Charset::Big5 => try!(all::BIG5_2003.decode(bytes, DecoderTrap::Strict)),
-        Charset::Koi8_R => try!(all::KOI8_R.decode(bytes, DecoderTrap::Strict)),
+        Charset::Big5 => all::BIG5_2003.decode(bytes, DecoderTrap::Strict)?,
+        Charset::Koi8_R => all::KOI8_R.decode(bytes, DecoderTrap::Strict)?,
         Charset::Ext(ref s) => match &**s {
-            "UTF-8" => try!(all::UTF_8.decode(bytes, DecoderTrap::Strict)),
+            "UTF-8" => all::UTF_8.decode(bytes, DecoderTrap::Strict)?,
             _ => return Err("Encoding is not supported".into()),
         },
     })
@@ -417,7 +417,7 @@ trait WriteAllCount {
 impl<T: Write> WriteAllCount for T {
     fn write_all_count(&mut self, buf: &[u8]) -> ::std::io::Result<usize>
     {
-        try!(self.write_all(buf));
+        self.write_all(buf)?;
         Ok(buf.len())
     }
 }
@@ -436,70 +436,70 @@ pub fn write_multipart<S: Write>(
 
     for node in nodes {
         // write a boundary
-        count += try!(stream.write_all_count(b"--"));
-        count += try!(stream.write_all_count(&boundary));
-        count += try!(stream.write_all_count(b"\r\n"));
+        count += stream.write_all_count(b"--")?;
+        count += stream.write_all_count(&boundary)?;
+        count += stream.write_all_count(b"\r\n")?;
 
         match node {
             &Node::Part(ref part) => {
                 // write the part's headers
                 for header in part.headers.iter() {
-                    count += try!(stream.write_all_count(header.name().as_bytes()));
-                    count += try!(stream.write_all_count(b": "));
-                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
-                    count += try!(stream.write_all_count(b"\r\n"));
+                    count += stream.write_all_count(header.name().as_bytes())?;
+                    count += stream.write_all_count(b": ")?;
+                    count += stream.write_all_count(header.value_string().as_bytes())?;
+                    count += stream.write_all_count(b"\r\n")?;
                 }
 
                 // write the blank line
-                count += try!(stream.write_all_count(b"\r\n"));
+                count += stream.write_all_count(b"\r\n")?;
 
                 // Write the part's content
-                count += try!(stream.write_all_count(&part.body));
+                count += stream.write_all_count(&part.body)?;
             },
             &Node::File(ref filepart) => {
                 // write the part's headers
                 for header in filepart.headers.iter() {
-                    count += try!(stream.write_all_count(header.name().as_bytes()));
-                    count += try!(stream.write_all_count(b": "));
-                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
-                    count += try!(stream.write_all_count(b"\r\n"));
+                    count += stream.write_all_count(header.name().as_bytes())?;
+                    count += stream.write_all_count(b": ")?;
+                    count += stream.write_all_count(header.value_string().as_bytes())?;
+                    count += stream.write_all_count(b"\r\n")?;
                 }
 
                 // write the blank line
-                count += try!(stream.write_all_count(b"\r\n"));
+                count += stream.write_all_count(b"\r\n")?;
 
                 // Write out the files's content
-                let mut file = try!(File::open(&filepart.path));
-                count += try!(::std::io::copy(&mut file, stream)) as usize;
+                let mut file = File::open(&filepart.path)?;
+                count += std::io::copy(&mut file, stream)? as usize;
             },
             &Node::Multipart((ref headers, ref subnodes)) => {
                 // Get boundary
-                let boundary = try!(get_multipart_boundary(headers));
+                let boundary = get_multipart_boundary(headers)?;
 
                 // write the multipart headers
                 for header in headers.iter() {
-                    count += try!(stream.write_all_count(header.name().as_bytes()));
-                    count += try!(stream.write_all_count(b": "));
-                    count += try!(stream.write_all_count(header.value_string().as_bytes()));
-                    count += try!(stream.write_all_count(b"\r\n"));
+                    count += stream.write_all_count(header.name().as_bytes())?;
+                    count += stream.write_all_count(b": ")?;
+                    count += stream.write_all_count(header.value_string().as_bytes())?;
+                    count += stream.write_all_count(b"\r\n")?;
                 }
 
                 // write the blank line
-                count += try!(stream.write_all_count(b"\r\n"));
+                count += stream.write_all_count(b"\r\n")?;
 
                 // Recurse
-                count += try!(write_multipart(stream, &boundary, &subnodes));
+                count += write_multipart(stream, &boundary, &subnodes)?;
             },
         }
 
         // write a line terminator
-        count += try!(stream.write_all_count(b"\r\n"));
+        count += stream.write_all_count(b"\r\n")?;
     }
 
     // write a final boundary
-    count += try!(stream.write_all_count(b"--"));
-    count += try!(stream.write_all_count(&boundary));
-    count += try!(stream.write_all_count(b"--"));
+    count += stream.write_all_count(b"--")?;
+    count += stream.write_all_count(&boundary)?;
+    count += stream.write_all_count(b"--")?;
 
     Ok(count)
 }
@@ -508,9 +508,9 @@ pub fn write_chunk<S: Write>(
     stream: &mut S,
     chunk: &[u8]) -> Result<(), ::std::io::Error>
 {
-    try!(write!(stream, "{:x}\r\n", chunk.len()));
-    try!(stream.write_all(chunk));
-    try!(stream.write_all(b"\r\n"));
+    write!(stream, "{:x}\r\n", chunk.len())?;
+    stream.write_all(chunk)?;
+    stream.write_all(b"\r\n")?;
     Ok(())
 }
 
@@ -525,78 +525,78 @@ pub fn write_multipart_chunked<S: Write>(
 {
     for node in nodes {
         // write a boundary
-        try!(write_chunk(stream, b"--"));
-        try!(write_chunk(stream, &boundary));
-        try!(write_chunk(stream, b"\r\n"));
+        write_chunk(stream, b"--")?;
+        write_chunk(stream, &boundary)?;
+        write_chunk(stream, b"\r\n")?;
 
         match node {
             &Node::Part(ref part) => {
                 // write the part's headers
                 for header in part.headers.iter() {
-                    try!(write_chunk(stream, header.name().as_bytes()));
-                    try!(write_chunk(stream, b": "));
-                    try!(write_chunk(stream, header.value_string().as_bytes()));
-                    try!(write_chunk(stream, b"\r\n"));
+                    write_chunk(stream, header.name().as_bytes())?;
+                    write_chunk(stream, b": ")?;
+                    write_chunk(stream, header.value_string().as_bytes())?;
+                    write_chunk(stream, b"\r\n")?;
                 }
 
                 // write the blank line
-                try!(write_chunk(stream, b"\r\n"));
+                write_chunk(stream, b"\r\n")?;
 
                 // Write the part's content
-                try!(write_chunk(stream, &part.body));
+                write_chunk(stream, &part.body)?;
             },
             &Node::File(ref filepart) => {
                 // write the part's headers
                 for header in filepart.headers.iter() {
-                    try!(write_chunk(stream, header.name().as_bytes()));
-                    try!(write_chunk(stream, b": "));
-                    try!(write_chunk(stream, header.value_string().as_bytes()));
-                    try!(write_chunk(stream, b"\r\n"));
+                    write_chunk(stream, header.name().as_bytes())?;
+                    write_chunk(stream, b": ")?;
+                    write_chunk(stream, header.value_string().as_bytes())?;
+                    write_chunk(stream, b"\r\n")?;
                 }
 
                 // write the blank line
-                try!(write_chunk(stream, b"\r\n"));
+                write_chunk(stream, b"\r\n")?;
 
                 // Write out the files's length
-                let metadata = try!(::std::fs::metadata(&filepart.path));
-                try!(write!(stream, "{:x}\r\n", metadata.len()));
+                let metadata = std::fs::metadata(&filepart.path)?;
+                write!(stream, "{:x}\r\n", metadata.len())?;
 
                 // Write out the file's content
-                let mut file = try!(File::open(&filepart.path));
-                try!(::std::io::copy(&mut file, stream)) as usize;
-                try!(stream.write(b"\r\n"));
+                let mut file = File::open(&filepart.path)?;
+                std::io::copy(&mut file, stream)? as usize;
+                stream.write(b"\r\n")?;
             },
             &Node::Multipart((ref headers, ref subnodes)) => {
                 // Get boundary
-                let boundary = try!(get_multipart_boundary(headers));
+                let boundary = get_multipart_boundary(headers)?;
 
                 // write the multipart headers
                 for header in headers.iter() {
-                    try!(write_chunk(stream, header.name().as_bytes()));
-                    try!(write_chunk(stream, b": "));
-                    try!(write_chunk(stream, header.value_string().as_bytes()));
-                    try!(write_chunk(stream, b"\r\n"));
+                    write_chunk(stream, header.name().as_bytes())?;
+                    write_chunk(stream, b": ")?;
+                    write_chunk(stream, header.value_string().as_bytes())?;
+                    write_chunk(stream, b"\r\n")?;
                 }
 
                 // write the blank line
-                try!(write_chunk(stream, b"\r\n"));
+                write_chunk(stream, b"\r\n")?;
 
                 // Recurse
-                try!(write_multipart_chunked(stream, &boundary, &subnodes));
+                write_multipart_chunked(stream, &boundary, &subnodes)?;
             },
         }
 
         // write a line terminator
-        try!(write_chunk(stream, b"\r\n"));
+        write_chunk(stream, b"\r\n")?;
     }
 
     // write a final boundary
-    try!(write_chunk(stream, b"--"));
-    try!(write_chunk(stream, &boundary));
-    try!(write_chunk(stream, b"--"));
+    write_chunk(stream, b"--")?;
+    write_chunk(stream, &boundary)?;
+    write_chunk(stream, b"--")?;
 
     // Write an empty chunk to signal the end of the body
-    try!(write_chunk(stream, b""));
+    write_chunk(stream, b"")?;
 
     Ok(())
 }
