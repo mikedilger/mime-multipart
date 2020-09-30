@@ -17,7 +17,8 @@ use mock::MockStream;
 
 use hyper::header::{Headers, ContentDisposition, DispositionParam, ContentType,
                     DispositionType};
-use mime::{Mime, TopLevel, SubLevel};
+// This is required to import the old style macros
+use mime::*;
 
 #[test]
 fn parser() {

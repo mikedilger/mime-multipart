@@ -11,7 +11,8 @@ use std::fmt::{self, Display};
 use std::io;
 use std::string::FromUtf8Error;
 
-use super::{httparse, hyper};
+use httparse;
+use hyper;
 
 /// An error type for the `mime-multipart` crate.
 pub enum Error {

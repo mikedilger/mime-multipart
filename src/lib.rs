@@ -5,16 +5,6 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-extern crate httparse;
-extern crate hyper;
-#[macro_use]
-extern crate mime;
-extern crate tempdir;
-extern crate textnonce;
-extern crate log;
-extern crate encoding;
-extern crate buf_read_ext;
-
 pub mod error;
 
 #[cfg(test)]
