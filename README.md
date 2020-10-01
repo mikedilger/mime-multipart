@@ -5,7 +5,11 @@
 
 Rust library for MIME multipart parsing, construction, and streaming
 
-Documentation is available at https://mikedilger.github.io/mime-multipart
+This crate predates rust async support. It will remain pre-async to support
+codebases which aren't intending to be rewritten under the async methodology.
+That means we will remain on hyper 0.10.
+
+Documentation is available at https://docs.rs/mime-multipart
 
 ## Features
 
