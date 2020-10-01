@@ -17,7 +17,8 @@ use mock::MockStream;
 
 use hyper::header::{Headers, ContentDisposition, DispositionParam, ContentType,
                     DispositionType};
-use mime::{Mime, TopLevel, SubLevel};
+// This is required to import the old style macros
+use mime::*;
 
 #[test]
 fn parser() {
@@ -46,7 +47,7 @@ fn parser() {
 
     let mut mock = MockStream::with_input(input);
 
-    let mock: &mut NetworkStream = &mut mock;
+    let mock: &mut dyn NetworkStream = &mut mock;
     let mut stream = BufReader::new(mock);
     let sock: SocketAddr = "127.0.0.1:80".parse().unwrap();
     let req = HyperRequest::new(&mut stream, sock).unwrap();
@@ -122,7 +123,7 @@ fn mixed_parser() {
 
     let mut mock = MockStream::with_input(input);
 
-    let mock: &mut NetworkStream = &mut mock;
+    let mock: &mut dyn NetworkStream = &mut mock;
     let mut stream = BufReader::new(mock);
     let sock: SocketAddr = "127.0.0.1:80".parse().unwrap();
     let req = HyperRequest::new(&mut stream, sock).unwrap();
@@ -205,7 +206,7 @@ fn test_line_feed() {
 
     let mut mock = MockStream::with_input(input);
 
-    let mock: &mut NetworkStream = &mut mock;
+    let mock: &mut dyn NetworkStream = &mut mock;
     let mut stream = BufReader::new(mock);
     let sock: SocketAddr = "127.0.0.1:80".parse().unwrap();
     let req = HyperRequest::new(&mut stream, sock).unwrap();

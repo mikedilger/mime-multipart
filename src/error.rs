@@ -11,7 +11,8 @@ use std::fmt::{self, Display};
 use std::io;
 use std::string::FromUtf8Error;
 
-use super::{httparse, hyper};
+use httparse;
+use hyper;
 
 /// An error type for the `mime-multipart` crate.
 pub enum Error {
@@ -69,25 +70,25 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Httparse(ref e) =>
-                format!("{}: {:?}", self.description(), e).fmt(f),
+                format!("{}: {:?}", self, e).fmt(f),
             Error::Io(ref e) =>
-                format!("{}: {}", self.description(), e).fmt(f),
+                format!("{}: {}", self, e).fmt(f),
             Error::Hyper(ref e) =>
-                format!("{}: {}", self.description(), e).fmt(f),
+                format!("{}: {}", self, e).fmt(f),
             Error::Utf8(ref e) =>
-                format!("{}: {}", self.description(), e).fmt(f),
+                format!("{}: {}", self, e).fmt(f),
             Error::Decoding(ref e) =>
-                format!("{}: {}", self.description(), e).fmt(f),
-            _ => format!("{}", self.description()).fmt(f),
+                format!("{}: {}", self, e).fmt(f),
+            _ => format!("{}", self).fmt(f),
         }
     }
 }
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!( f.write_str(&*self.description()) );
+        write!(f, "{}", self)?;
         if self.source().is_some() {
-            try!( write!(f, ": {:?}", self.source().unwrap()) ); // recurse
+            write!(f, ": {:?}", self.source().unwrap())?; // recurse
         }
         Ok(())
     }

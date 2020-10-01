@@ -8,13 +8,14 @@ repository = "https://github.com/mikedilger/mime-multipart"
 documentation = "https://mikedilger.github.io/mime-multipart"
 license = "MIT OR Apache-2.0"
 keywords = ["mime", "multipart", "mixed"]
+edition = "2018"
 
 [dependencies]
 hyper = { version = "0.10", default-features = false }
 mime = "0.2"
 httparse = "1.3"
 tempdir = "0.3"
-textnonce = "0.6"
+textnonce = "0.7"
 log = "0.4"
 encoding = "0.2"
-buf-read-ext = "0.3"
+buf-read-ext = "0.4"
