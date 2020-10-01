@@ -1,6 +1,6 @@
 [package]
 name = "mime_multipart"
-version = "0.6.0-unstable"
+version = "0.6.0"
 description = "MIME multipart parsing, construction, and streaming"
 authors = ["Mike Dilger <mike@optcomp.nz>"]
 readme = "README.md"
@@ -15,7 +15,7 @@ hyper = { version = "0.10", default-features = false }
 mime = "0.2"
 httparse = "1.3"
 tempdir = "0.3"
-textnonce = "0.7"
+textnonce = "0.8"
 log = "0.4"
 encoding = "0.2"
 buf-read-ext = "0.4"
