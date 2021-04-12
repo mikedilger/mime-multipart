@@ -397,7 +397,11 @@ fn charset_decode(charset: &Charset, bytes: &[u8]) -> Result<String, Cow<'static
 /// Generate a valid multipart boundary, statistically unlikely to be found within
 /// the content of the parts.
 pub fn generate_boundary() -> Vec<u8> {
-    TextNonce::sized(68).unwrap().into_string().into_bytes()
+    TextNonce::sized(68).unwrap().into_string().into_bytes().iter().map(|&ch| {
+        if ch==b'=' { return b'-'; }
+        else if ch==b'/' { return b'.'; }
+        else { return ch; }
+    }).collect()
 }
 
 // Convenience method, like write_all(), but returns the count of bytes written.
