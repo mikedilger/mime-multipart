@@ -70,15 +70,15 @@ impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Httparse(ref e) =>
-                format!("{}: {:?}", self, e).fmt(f),
+                format!("Httparse: {:?}", e).fmt(f),
             Error::Io(ref e) =>
-                format!("{}: {}", self, e).fmt(f),
+                format!("Io: {}", e).fmt(f),
             Error::Hyper(ref e) =>
-                format!("{}: {}", self, e).fmt(f),
+                format!("Hyper: {}", e).fmt(f),
             Error::Utf8(ref e) =>
-                format!("{}: {}", self, e).fmt(f),
+                format!("Utf8: {}", e).fmt(f),
             Error::Decoding(ref e) =>
-                format!("{}: {}", self, e).fmt(f),
+                format!("Decoding: {}", e).fmt(f),
             _ => format!("{}", self).fmt(f),
         }
     }
