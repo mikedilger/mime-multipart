@@ -22,7 +22,6 @@ use std::ops::Drop;
 use encoding::{all, Encoding, DecoderTrap};
 use hyper::header::{ContentType, Headers, ContentDisposition, DispositionParam,
                     DispositionType, Charset};
-use tempdir::TempDir;
 use textnonce::TextNonce;
 use mime::{Attr, Mime, TopLevel, Value};
 use buf_read_ext::BufReadExt;
@@ -76,7 +75,7 @@ impl FilePart {
     /// deleted once the FilePart object goes out of scope).
     pub fn create(headers: Headers) -> Result<FilePart, Error> {
         // Setup a file to capture the contents.
-        let mut path = TempDir::new("mime_multipart")?.into_path();
+        let mut path = tempfile::Builder::new().prefix("mime_multipart").tempdir()?.into_path();
         let tempdir = Some(path.clone());
         path.push(TextNonce::sized_urlsafe(32).unwrap().into_string());
         Ok(FilePart {
